@@ -1,0 +1,26 @@
+{
+  "name": "@keyring/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "reconcile": "node dist/identity/cli.js"
+  },
+  "bin": {
+    "keyring-reconcile": "./dist/identity/cli.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,48 @@
+[
+  {
+    "when": { "owner": "keyring-test", "repo": "payments" },
+    "response": [
+      {
+        "author": { "login": "analyticalengine" },
+        "commit": {
+          "author": {
+            "email": "ada@keyring-test.example",
+            "name": "Ada"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "infra" },
+    "response": [
+      {
+        "author": { "login": "cobol-compiler" },
+        "commit": {
+          "author": {
+            "email": "grace@keyring-test.example",
+            "name": "Grace"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "crypto-notes" },
+    "response": [
+      {
+        "author": { "login": "bombe-ops" },
+        "commit": {
+          "author": {
+            "email": "alan@keyring-test.example",
+            "name": "Alan"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "default": true,
+    "response": []
+  }
+]

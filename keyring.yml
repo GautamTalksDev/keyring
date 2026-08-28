@@ -1,0 +1,56 @@
+# keyring.yml — customer policy (checked into *your* repo)
+#
+# Declares protected resources, known service accounts, staleness thresholds,
+# and optional auto-approve rules (OFF by default).
+# See docs/POLICY.md.
+
+version: 1
+
+# Always require individual human approval — never bulk-approve these.
+protected:
+  - resource: "keyring-test/payments"
+    system: github
+    reason: "Prod payments CDN — deploy key / collaborator changes need a named owner"
+  - resource: "**/prod/**"
+    reason: "Any resource path containing /prod/"
+
+# Known automation identities. Declaring the Checkpoint 4 CI trap key here
+# attributes it to a service account so it stops appearing as Unattributed.
+service_accounts:
+  - id: ci-payments-cdn
+    display_name: "GitHub Actions — payments CDN publish"
+    owner: "platform@keyring-test.example"
+    key_ids:
+      - AKIA_KEYRING_CI_ORPHAN_LOOKALIKE
+    resource_ids:
+      - keyring-test/payments
+
+staleness:
+  defaults:
+    cooling_days: 30
+    stale_days: 90
+    critical_days: 365
+  systems:
+    github:
+      cooling_days: 14
+      stale_days: 60
+      critical_days: 180
+    aws:
+      cooling_days: 7
+      stale_days: 30
+      critical_days: 90
+
+# Auto-approve is OFF by default. When enabled, the UI shows which rule fired.
+auto_approve:
+  enabled: false
+  rules:
+    - id: safe-read-reversible
+      description: "Reversible read-only grants under risk 35"
+      max_capability: read
+      reversible_only: true
+      max_risk: 35
+
+reaudit:
+  # Server cron (optional). Example: daily 06:00 UTC.
+  # cron: "0 6 * * *"
+  diff_only: true

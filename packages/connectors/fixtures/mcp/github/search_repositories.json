@@ -1,0 +1,7 @@
+{
+  "items": [
+    { "name": "payments", "full_name": "keyring-test/payments" },
+    { "name": "infra", "full_name": "keyring-test/infra" },
+    { "name": "crypto-notes", "full_name": "keyring-test/crypto-notes" }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "users": [
+    { "primaryEmail": "ada@keyring-test.example", "id": "u-ada" },
+    { "primaryEmail": "grace@keyring-test.example", "id": "u-grace" },
+    { "primaryEmail": "alan@keyring-test.example", "id": "u-alan" }
+  ]
+}

@@ -1,0 +1,22 @@
+# Production-style TrueForge image: installs published @truefoundry/trueforge from npm.
+# Mirrors https://github.com/truefoundry/trueforge/blob/main/Dockerfile
+#
+# Build-arg:
+#   APP_VERSION — npm version, e.g. 0.1.4
+
+FROM node:24-slim AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    STANDALONE=false \
+    HOST=0.0.0.0
+
+ARG APP_VERSION=0.1.4
+RUN test -n "$APP_VERSION" || (echo "APP_VERSION build-arg is required" >&2 && exit 1)
+
+RUN npm install --omit=dev "@truefoundry/trueforge@${APP_VERSION}" \
+  && npm cache clean --force
+
+EXPOSE 8790
+
+CMD ["node", "node_modules/@truefoundry/trueforge/dist/main.js"]

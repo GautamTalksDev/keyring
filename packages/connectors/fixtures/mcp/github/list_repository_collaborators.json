@@ -1,0 +1,54 @@
+[
+  {
+    "when": { "owner": "keyring-test", "repo": "payments", "affiliation": "all" },
+    "response": {
+      "collaborators": [
+        {
+          "login": "analyticalengine",
+          "role_name": "push",
+          "permissions": { "pull": true, "push": true, "admin": false }
+        }
+      ]
+    }
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "payments", "affiliation": "outside" },
+    "response": { "collaborators": [] }
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "infra", "affiliation": "all" },
+    "response": {
+      "collaborators": [
+        {
+          "login": "cobol-compiler",
+          "role_name": "admin",
+          "permissions": { "pull": true, "push": true, "admin": true }
+        }
+      ]
+    }
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "infra", "affiliation": "outside" },
+    "response": { "collaborators": [] }
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "crypto-notes", "affiliation": "all" },
+    "response": {
+      "collaborators": [
+        {
+          "login": "bombe-ops",
+          "role_name": "push",
+          "permissions": { "pull": true, "push": true, "admin": false }
+        }
+      ]
+    }
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "crypto-notes", "affiliation": "outside" },
+    "response": { "collaborators": [] }
+  },
+  {
+    "default": true,
+    "response": { "collaborators": [] }
+  }
+]

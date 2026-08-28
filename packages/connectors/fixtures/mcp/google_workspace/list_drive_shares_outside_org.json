@@ -1,0 +1,26 @@
+{
+  "shares": [
+    {
+      "fileId": "board-compensation-2024",
+      "fileName": "Board compensation 2024",
+      "emailAddress": "ada.numbers.personal@gmail.com",
+      "role": "reader",
+      "createdTime": "2024-11-02T00:00:00.000Z",
+      "modifiedTime": "2025-03-01T00:00:00.000Z"
+    },
+    {
+      "fileId": "customer-contracts-vault",
+      "fileName": "Customer contracts vault",
+      "emailAddress": "grace.h.navy.mail@gmail.com",
+      "role": "writer",
+      "modifiedTime": "2025-12-01T00:00:00.000Z"
+    },
+    {
+      "fileId": "incident-war-room-exports",
+      "fileName": "Incident war-room exports",
+      "emailAddress": "enigmamachine88@gmail.com",
+      "role": "reader",
+      "modifiedTime": "2026-01-05T00:00:00.000Z"
+    }
+  ]
+}

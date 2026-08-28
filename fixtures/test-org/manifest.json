@@ -1,0 +1,16 @@
+{
+  "org": "keyring-test",
+  "generatedAt": "2026-08-24T23:32:20.871Z",
+  "grantCount": 15,
+  "peopleCount": 3,
+  "surviveDemo": {
+    "label": "CI deploy key on payments — looks orphaned (unknown principal, empty title, no lastUsedAt) but is GitHub Actions prod publish. Demo action: HOLD / flag_only. Never revoke.",
+    "marker": "KEYRING_DO_NOT_REVOKE_CI_INFRA",
+    "grantId": "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86",
+    "system": "github",
+    "resourceId": "keyring-test/payments",
+    "principalKeyId": "AKIA_KEYRING_CI_ORPHAN_LOOKALIKE",
+    "proposedAction": "flag_only",
+    "demoStatus": "held"
+  }
+}

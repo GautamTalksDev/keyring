@@ -1,0 +1,572 @@
+{
+  "grants": [
+    {
+      "system": "google_workspace",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "work_email",
+            "value": "ada@keyring-test.example",
+            "source": "google_workspace"
+          }
+        ]
+      },
+      "resource": {
+        "id": "folders/ada-team-notes",
+        "displayName": "Ada / Team notes",
+        "kind": "drive_folder"
+      },
+      "capability": "write",
+      "createdAt": "2025-01-10T00:00:00.000Z",
+      "lastUsedAt": "2026-08-20T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "drive.permissions.delete"
+      },
+      "evidence": [
+        {
+          "claim": "Drive ACL lists ada@keyring-test.example as writer on Ada / Team notes",
+          "source": "google_workspace",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "slack",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "work_email",
+            "value": "ada@keyring-test.example",
+            "source": "slack"
+          }
+        ]
+      },
+      "resource": {
+        "id": "C_ENG_GENERAL",
+        "displayName": "#eng-general",
+        "kind": "channel"
+      },
+      "capability": "write",
+      "lastUsedAt": "2026-08-22T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "conversations.kick"
+      },
+      "evidence": [
+        {
+          "claim": "Slack members.list includes ada@keyring-test.example in #eng-general",
+          "source": "slack",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "google_workspace",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "personal_email",
+            "value": "ada.numbers.personal@gmail.com",
+            "source": "google_workspace"
+          }
+        ]
+      },
+      "resource": {
+        "id": "folders/board-compensation-2024",
+        "displayName": "Board compensation 2024",
+        "kind": "drive_folder"
+      },
+      "capability": "read",
+      "createdAt": "2024-11-02T00:00:00.000Z",
+      "lastUsedAt": "2025-03-01T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "drive.permissions.delete"
+      },
+      "evidence": [
+        {
+          "claim": "Drive folder shared to personal Gmail ada.numbers.personal@gmail.com (not work domain)",
+          "source": "google_workspace",
+          "confidence": "certain"
+        },
+        {
+          "claim": "Personal address correlates to Ada Lovelace via prior offboarding form",
+          "source": "hr_notes",
+          "confidence": "probable"
+        }
+      ]
+    },
+    {
+      "system": "github",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "username",
+            "value": "analyticalengine",
+            "source": "github"
+          }
+        ]
+      },
+      "resource": {
+        "id": "keyring-test/payments",
+        "displayName": "payments",
+        "kind": "repo"
+      },
+      "capability": "write",
+      "createdAt": "2024-08-01T00:00:00.000Z",
+      "lastUsedAt": "2026-07-15T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "remove_collaborator"
+      },
+      "evidence": [
+        {
+          "claim": "GitHub collaborator analyticalengine has write on keyring-test/payments",
+          "source": "github",
+          "confidence": "certain"
+        },
+        {
+          "claim": "Username analyticalengine does not string-match Ada Lovelace; linked via commit email ada@keyring-test.example",
+          "source": "github_commit_email",
+          "confidence": "probable"
+        }
+      ]
+    },
+    {
+      "system": "google_workspace",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "work_email",
+            "value": "grace@keyring-test.example",
+            "source": "google_workspace"
+          }
+        ]
+      },
+      "resource": {
+        "id": "folders/grace-onboarding",
+        "displayName": "Grace / Onboarding",
+        "kind": "drive_folder"
+      },
+      "capability": "owner",
+      "createdAt": "2023-02-01T00:00:00.000Z",
+      "lastUsedAt": "2026-08-10T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": false,
+        "method": "transfer_ownership_then_remove"
+      },
+      "evidence": [
+        {
+          "claim": "Drive owner is grace@keyring-test.example on Grace / Onboarding",
+          "source": "google_workspace",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "notion",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "work_email",
+            "value": "grace@keyring-test.example",
+            "source": "notion"
+          }
+        ]
+      },
+      "resource": {
+        "id": "page:legacy-runbook-2019",
+        "displayName": "Legacy pager runbook (2019)",
+        "kind": "page"
+      },
+      "capability": "admin",
+      "createdAt": "2019-04-12T00:00:00.000Z",
+      "lastUsedAt": "2025-06-30T12:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "notion.pages.update_permissions"
+      },
+      "evidence": [
+        {
+          "claim": "Notion admin on Legacy pager runbook; last_edited_time 2025-06-30T12:00:00.000Z",
+          "source": "notion",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "google_workspace",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "personal_email",
+            "value": "grace.h.navy.mail@gmail.com",
+            "source": "google_workspace"
+          }
+        ]
+      },
+      "resource": {
+        "id": "folders/customer-contracts-vault",
+        "displayName": "Customer contracts vault",
+        "kind": "drive_folder"
+      },
+      "capability": "write",
+      "lastUsedAt": "2025-12-01T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "drive.permissions.delete"
+      },
+      "evidence": [
+        {
+          "claim": "Customer contracts vault shared to personal Gmail grace.h.navy.mail@gmail.com",
+          "source": "google_workspace",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "github",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "username",
+            "value": "cobol-compiler",
+            "source": "github"
+          }
+        ]
+      },
+      "resource": {
+        "id": "keyring-test/infra",
+        "displayName": "infra",
+        "kind": "repo"
+      },
+      "capability": "admin",
+      "lastUsedAt": "2026-05-01T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "remove_collaborator"
+      },
+      "evidence": [
+        {
+          "claim": "GitHub user cobol-compiler is admin on keyring-test/infra",
+          "source": "github",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "slack",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "work_email",
+            "value": "alan@keyring-test.example",
+            "source": "slack"
+          }
+        ]
+      },
+      "resource": {
+        "id": "C_SECURITY",
+        "displayName": "#security",
+        "kind": "channel"
+      },
+      "capability": "write",
+      "lastUsedAt": "2026-08-21T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "conversations.kick"
+      },
+      "evidence": [
+        {
+          "claim": "Slack #security membership for alan@keyring-test.example",
+          "source": "slack",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "google_workspace",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "work_email",
+            "value": "alan@keyring-test.example",
+            "source": "google_workspace"
+          }
+        ]
+      },
+      "resource": {
+        "id": "folders/alan-research",
+        "displayName": "Alan / Research",
+        "kind": "drive_folder"
+      },
+      "capability": "write",
+      "lastUsedAt": "2026-08-18T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "drive.permissions.delete"
+      },
+      "evidence": [
+        {
+          "claim": "Drive writer alan@keyring-test.example on Alan / Research",
+          "source": "google_workspace",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "google_workspace",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "personal_email",
+            "value": "enigmamachine88@gmail.com",
+            "source": "google_workspace"
+          }
+        ]
+      },
+      "resource": {
+        "id": "folders/incident-war-room-exports",
+        "displayName": "Incident war-room exports",
+        "kind": "drive_folder"
+      },
+      "capability": "read",
+      "lastUsedAt": "2026-01-05T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "drive.permissions.delete"
+      },
+      "evidence": [
+        {
+          "claim": "War-room exports shared to personal Gmail enigmamachine88@gmail.com",
+          "source": "google_workspace",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "github",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "username",
+            "value": "bombe-ops",
+            "source": "github"
+          }
+        ]
+      },
+      "resource": {
+        "id": "keyring-test/crypto-notes",
+        "displayName": "crypto-notes",
+        "kind": "repo"
+      },
+      "capability": "write",
+      "lastUsedAt": "2026-04-02T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "remove_collaborator"
+      },
+      "evidence": [
+        {
+          "claim": "GitHub collaborator bombe-ops on crypto-notes (name does not match Alan Turing)",
+          "source": "github",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "slack",
+      "principal": {
+        "kind": "human",
+        "identifiers": [
+          {
+            "kind": "work_email",
+            "value": "ada@keyring-test.example",
+            "source": "slack"
+          },
+          {
+            "kind": "username",
+            "value": "ada.l",
+            "source": "slack"
+          }
+        ]
+      },
+      "resource": {
+        "id": "G_PRIVATE_EXEC_COMP",
+        "displayName": "#exec-comp (private)",
+        "kind": "channel"
+      },
+      "capability": "admin",
+      "createdAt": "2025-09-01T00:00:00.000Z",
+      "lastUsedAt": "2026-02-14T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": true,
+        "method": "admin.conversations.remove"
+      },
+      "evidence": [
+        {
+          "claim": "Private channel #exec-comp lists Ada as channel admin; channel is not in public workspace directory",
+          "source": "slack",
+          "confidence": "certain"
+        }
+      ]
+    },
+    {
+      "system": "aws",
+      "principal": {
+        "kind": "unknown",
+        "identifiers": [
+          {
+            "kind": "key_id",
+            "value": "AKIA_KEYRING_UNLABELED_BATCH",
+            "source": "aws_iam"
+          }
+        ]
+      },
+      "resource": {
+        "id": "arn:aws:iam::999999999999:role/BatchExports",
+        "displayName": "BatchExports",
+        "kind": "iam_role"
+      },
+      "capability": "admin",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": false,
+        "method": "iam:DeleteAccessKey"
+      },
+      "evidence": [
+        {
+          "claim": "IAM access key AKIA_KEYRING_UNLABELED_BATCH has admin on BatchExports with empty Owner/Team tags",
+          "source": "aws_iam",
+          "confidence": "certain"
+        },
+        {
+          "claim": "No HR or IdP principal maps to this key id",
+          "source": "identity_reconciliation",
+          "confidence": "probable"
+        }
+      ]
+    },
+    {
+      "system": "github",
+      "principal": {
+        "kind": "unknown",
+        "identifiers": [
+          {
+            "kind": "key_id",
+            "value": "AKIA_KEYRING_CI_ORPHAN_LOOKALIKE",
+            "source": "github_deploy_keys"
+          }
+        ]
+      },
+      "resource": {
+        "id": "keyring-test/payments",
+        "displayName": "payments (prod deploy)",
+        "kind": "repo"
+      },
+      "capability": "admin",
+      "createdAt": "2023-06-01T00:00:00.000Z",
+      "discoveredAt": "2026-08-24T17:00:00.000Z",
+      "revocable": {
+        "possible": true,
+        "reversible": false,
+        "method": "repos.delete_deploy_key"
+      },
+      "evidence": [
+        {
+          "claim": "Deploy key AKIA_KEYRING_CI_ORPHAN_LOOKALIKE has admin on keyring-test/payments with title \"\" and no owner label \u2014 appears orphaned",
+          "source": "github_deploy_keys",
+          "confidence": "certain"
+        },
+        {
+          "claim": "TRAP/KEYRING_DO_NOT_REVOKE_CI_INFRA: key is the GitHub Actions deploy key for prod payments CDN publish; revoking breaks release CI",
+          "source": "runbook:ci-payments-deploy",
+          "confidence": "certain",
+          "raw": {
+            "mustSurviveDemo": true,
+            "proposedAction": "flag_only",
+            "demoDecision": "held"
+          }
+        }
+      ]
+    }
+  ],
+  "directory": [
+    {
+      "displayName": "Ada Lovelace",
+      "workEmails": [
+        "ada@keyring-test.example"
+      ],
+      "personalEmails": [
+        "ada.numbers.personal@gmail.com"
+      ],
+      "usernames": [
+        "analyticalengine"
+      ]
+    },
+    {
+      "displayName": "Grace Hopper",
+      "workEmails": [
+        "grace@keyring-test.example"
+      ],
+      "personalEmails": [
+        "grace.h.navy.mail@gmail.com"
+      ],
+      "usernames": [
+        "cobol-compiler"
+      ]
+    },
+    {
+      "displayName": "Alan Turing",
+      "workEmails": [
+        "alan@keyring-test.example"
+      ],
+      "personalEmails": [
+        "enigmamachine88@gmail.com"
+      ],
+      "usernames": [
+        "bombe-ops"
+      ]
+    }
+  ]
+}

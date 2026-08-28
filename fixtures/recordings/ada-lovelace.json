@@ -1,0 +1,693 @@
+{
+  "version": 1,
+  "id": "ada-lovelace",
+  "recordedAt": "2026-08-25T01:07:25.009Z",
+  "person": "Ada Lovelace",
+  "scope": null,
+  "driver": "record",
+  "models": {
+    "inventory": "openai/gpt-4o-mini",
+    "reasoning": "openai/gpt-4o"
+  },
+  "interactions": [
+    {
+      "kind": "model",
+      "at": "2026-08-25T01:07:24.828Z",
+      "role": "inventory",
+      "model": "openai/gpt-4o-mini",
+      "inputTokens": 800,
+      "outputTokens": 200,
+      "costUsd": 0.00024,
+      "inputSummary": "Summarise inventory for aws",
+      "outputSummary": "compact grants for aws"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-25T01:07:24.829Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "aws"
+      },
+      "resultSummary": "1 grants"
+    },
+    {
+      "kind": "model",
+      "at": "2026-08-25T01:07:24.829Z",
+      "role": "inventory",
+      "model": "openai/gpt-4o-mini",
+      "inputTokens": 800,
+      "outputTokens": 200,
+      "costUsd": 0.00024,
+      "inputSummary": "Summarise inventory for github",
+      "outputSummary": "compact grants for github"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-25T01:07:24.830Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "github"
+      },
+      "resultSummary": "4 grants"
+    },
+    {
+      "kind": "model",
+      "at": "2026-08-25T01:07:24.830Z",
+      "role": "inventory",
+      "model": "openai/gpt-4o-mini",
+      "inputTokens": 800,
+      "outputTokens": 200,
+      "costUsd": 0.00024,
+      "inputSummary": "Summarise inventory for google_workspace",
+      "outputSummary": "compact grants for google_workspace"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-25T01:07:24.831Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "google_workspace"
+      },
+      "resultSummary": "6 grants"
+    },
+    {
+      "kind": "model",
+      "at": "2026-08-25T01:07:24.831Z",
+      "role": "inventory",
+      "model": "openai/gpt-4o-mini",
+      "inputTokens": 800,
+      "outputTokens": 200,
+      "costUsd": 0.00024,
+      "inputSummary": "Summarise inventory for notion",
+      "outputSummary": "compact grants for notion"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-25T01:07:24.832Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "notion"
+      },
+      "resultSummary": "1 grants"
+    },
+    {
+      "kind": "model",
+      "at": "2026-08-25T01:07:24.832Z",
+      "role": "inventory",
+      "model": "openai/gpt-4o-mini",
+      "inputTokens": 800,
+      "outputTokens": 200,
+      "costUsd": 0.00024,
+      "inputSummary": "Summarise inventory for slack",
+      "outputSummary": "compact grants for slack"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-25T01:07:24.832Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "slack"
+      },
+      "resultSummary": "3 grants"
+    },
+    {
+      "kind": "model",
+      "at": "2026-08-25T01:07:24.832Z",
+      "role": "reasoning",
+      "model": "openai/gpt-4o",
+      "inputTokens": 2500,
+      "outputTokens": 1200,
+      "costUsd": 0.01825,
+      "inputSummary": "Reconcile 15 grants + risk",
+      "outputSummary": "clusters, unknown bucket, risk reasons"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-25T01:07:24.835Z",
+      "tool": "run_identity_reconciliation",
+      "arguments": {
+        "grant_ids": [
+          "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2",
+          "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c",
+          "f188468b24cc04142c07854d366f7516946566cff2a5ec3d4cdce1a322bd5098",
+          "c5ee63014158cea2aa23554f3aa40d8cf88f9cc89ab0a3dc213b198a4deb1691",
+          "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86",
+          "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344",
+          "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6",
+          "2ee65775094c4508d7aa627edff05f1cf7a80f129d5b129161ae621f1c1687d5",
+          "0c35e443dbca2a083239e3d4fa609438706aab09b8c2b7bcfab283611c57909b",
+          "dd764f717c4b5e2ef1d0418c1a1f2d1b5522cf26b32b1b4f965d3d35cf9f5f0e",
+          "167488a03e72f0c13387eae4f209a300a1d015e414189419b6371cc442b4726b",
+          "679058c31ac64945a6fee8890b23c9d50f4799eba62a81118773e68428ca96a1",
+          "f7029468068e6bbca30d6c833c78613e2e856c2e3d85487662e5f28e89848885",
+          "cbe573ddf3f017b1a4cc227a819a5e89686d29a64dbc4c1cb45e9cfcc9260d31",
+          "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
+        ]
+      },
+      "resultSummary": "3 clusters, 2 unknown"
+    }
+  ],
+  "events": [
+    {
+      "type": "subagent.started",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "aws",
+      "displayName": "AWS",
+      "at": "2026-08-25T01:07:24.827Z"
+    },
+    {
+      "type": "cost.update",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "at": "2026-08-25T01:07:24.828Z",
+      "inputTokens": 800,
+      "outputTokens": 200,
+      "costUsd": 0.00024,
+      "hardCapUsd": 0.5,
+      "capped": false
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "aws",
+      "found": 1,
+      "at": "2026-08-25T01:07:24.829Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "aws",
+      "found": 1,
+      "at": "2026-08-25T01:07:24.829Z"
+    },
+    {
+      "type": "subagent.started",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "github",
+      "displayName": "GitHub",
+      "at": "2026-08-25T01:07:24.829Z"
+    },
+    {
+      "type": "cost.update",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "at": "2026-08-25T01:07:24.829Z",
+      "inputTokens": 1600,
+      "outputTokens": 400,
+      "costUsd": 0.00048,
+      "hardCapUsd": 0.5,
+      "capped": false
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "github",
+      "found": 4,
+      "at": "2026-08-25T01:07:24.830Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "github",
+      "found": 4,
+      "at": "2026-08-25T01:07:24.830Z"
+    },
+    {
+      "type": "subagent.started",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "google_workspace",
+      "displayName": "Google Workspace",
+      "at": "2026-08-25T01:07:24.830Z"
+    },
+    {
+      "type": "cost.update",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "at": "2026-08-25T01:07:24.830Z",
+      "inputTokens": 2400,
+      "outputTokens": 600,
+      "costUsd": 0.00072,
+      "hardCapUsd": 0.5,
+      "capped": false
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "google_workspace",
+      "found": 6,
+      "at": "2026-08-25T01:07:24.831Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "google_workspace",
+      "found": 6,
+      "at": "2026-08-25T01:07:24.831Z"
+    },
+    {
+      "type": "subagent.started",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "notion",
+      "displayName": "Notion",
+      "at": "2026-08-25T01:07:24.831Z"
+    },
+    {
+      "type": "cost.update",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "at": "2026-08-25T01:07:24.831Z",
+      "inputTokens": 3200,
+      "outputTokens": 800,
+      "costUsd": 0.00096,
+      "hardCapUsd": 0.5,
+      "capped": false
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "notion",
+      "found": 1,
+      "at": "2026-08-25T01:07:24.832Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "notion",
+      "found": 1,
+      "at": "2026-08-25T01:07:24.832Z"
+    },
+    {
+      "type": "subagent.started",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "slack",
+      "displayName": "Slack",
+      "at": "2026-08-25T01:07:24.832Z"
+    },
+    {
+      "type": "cost.update",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "at": "2026-08-25T01:07:24.832Z",
+      "inputTokens": 4000,
+      "outputTokens": 1000,
+      "costUsd": 0.0012,
+      "hardCapUsd": 0.5,
+      "capped": false
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "slack",
+      "found": 3,
+      "at": "2026-08-25T01:07:24.832Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "systemId": "slack",
+      "found": 3,
+      "at": "2026-08-25T01:07:24.832Z"
+    },
+    {
+      "type": "reconcile.started",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "at": "2026-08-25T01:07:24.832Z"
+    },
+    {
+      "type": "cost.update",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "at": "2026-08-25T01:07:24.832Z",
+      "inputTokens": 6500,
+      "outputTokens": 2200,
+      "costUsd": 0.01945,
+      "hardCapUsd": 0.5,
+      "capped": false
+    },
+    {
+      "type": "reconcile.done",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "at": "2026-08-25T01:07:24.836Z",
+      "clusters": 3,
+      "unknown": 2
+    },
+    {
+      "type": "cards.persisted",
+      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "cardCount": 7,
+      "at": "2026-08-25T01:07:25.008Z"
+    }
+  ],
+  "costs": {
+    "inputTokens": 6500,
+    "outputTokens": 2200,
+    "costUsd": 0.01945,
+    "hardCapUsd": 0.5,
+    "capped": false,
+    "lines": [
+      {
+        "at": "2026-08-25T01:07:24.828Z",
+        "role": "inventory",
+        "model": "openai/gpt-4o-mini",
+        "inputTokens": 800,
+        "outputTokens": 200,
+        "costUsd": 0.00024,
+        "note": "inventory_system:aws"
+      },
+      {
+        "at": "2026-08-25T01:07:24.829Z",
+        "role": "inventory",
+        "model": "openai/gpt-4o-mini",
+        "inputTokens": 800,
+        "outputTokens": 200,
+        "costUsd": 0.00024,
+        "note": "inventory_system:github"
+      },
+      {
+        "at": "2026-08-25T01:07:24.830Z",
+        "role": "inventory",
+        "model": "openai/gpt-4o-mini",
+        "inputTokens": 800,
+        "outputTokens": 200,
+        "costUsd": 0.00024,
+        "note": "inventory_system:google_workspace"
+      },
+      {
+        "at": "2026-08-25T01:07:24.831Z",
+        "role": "inventory",
+        "model": "openai/gpt-4o-mini",
+        "inputTokens": 800,
+        "outputTokens": 200,
+        "costUsd": 0.00024,
+        "note": "inventory_system:notion"
+      },
+      {
+        "at": "2026-08-25T01:07:24.832Z",
+        "role": "inventory",
+        "model": "openai/gpt-4o-mini",
+        "inputTokens": 800,
+        "outputTokens": 200,
+        "costUsd": 0.00024,
+        "note": "inventory_system:slack"
+      },
+      {
+        "at": "2026-08-25T01:07:24.832Z",
+        "role": "reasoning",
+        "model": "openai/gpt-4o",
+        "inputTokens": 2500,
+        "outputTokens": 1200,
+        "costUsd": 0.01825,
+        "note": "identity_reconciliation+risk"
+      }
+    ]
+  },
+  "cards": [
+    {
+      "id": "a4ce24e16865f17028e4609d77739286cced8d6430a98a5da2aeff4709a119a7",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "flag_only",
+        "description": "Principal unresolved — flag for human investigation before any revoke."
+      },
+      "irreversible": true,
+      "risk": {
+        "score": 100,
+        "reasons": [
+          "capability admin (+55)",
+          "lastUsedAt unknown — cannot confirm recent use (+20)",
+          "revocation is irreversible (+15)",
+          "principal unresolved (kind=unknown) (+25)"
+        ]
+      },
+      "attribution": {
+        "confidence": "speculative",
+        "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+      },
+      "grantId": "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2"
+    },
+    {
+      "id": "fd28c67e0c673b61c91d217625b04f00fb5bf8f75a9b9cf1be401acad406d068",
+      "status": "held",
+      "proposedAction": {
+        "kind": "flag_only",
+        "description": "Looks orphaned but evidence marks CI infrastructure — HOLD / flag only. Never revoke."
+      },
+      "irreversible": true,
+      "risk": {
+        "score": 100,
+        "reasons": [
+          "capability admin (+55)",
+          "lastUsedAt unknown — cannot confirm recent use (+20)",
+          "revocation is irreversible (+15)",
+          "principal unresolved (kind=unknown) (+25)"
+        ]
+      },
+      "attribution": {
+        "confidence": "speculative",
+        "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+      },
+      "grantId": "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86"
+    },
+    {
+      "id": "70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "revoke",
+        "description": "Revoke admin on #exec-comp (private) (slack)."
+      },
+      "irreversible": false,
+      "risk": {
+        "score": 75,
+        "reasons": [
+          "capability admin (+55)",
+          "last used 192 days ago — stale (+20)",
+          "revocation possible via admin.conversations.remove (+0)",
+          "principal resolved as human (+0)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
+        "confidence": "probable",
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+      },
+      "grantId": "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
+    },
+    {
+      "id": "2fdcefdc98f7683e807060330d5e2c551f4cfbf9f64fab688987eef8b50fcca7",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "downgrade",
+        "description": "Consider downgrading read on Board compensation 2024."
+      },
+      "irreversible": false,
+      "risk": {
+        "score": 40,
+        "reasons": [
+          "capability read (+10)",
+          "last used 542 days ago — highly stale (+30)",
+          "revocation possible via drive.permissions.delete (+0)",
+          "principal resolved as human (+0)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
+        "confidence": "probable",
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+      },
+      "grantId": "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6"
+    },
+    {
+      "id": "941468f73b64efd68fa1cc686277b650d1ad9ceb584620061737284318e04d0f",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "downgrade",
+        "description": "Consider downgrading write on payments."
+      },
+      "irreversible": false,
+      "risk": {
+        "score": 40,
+        "reasons": [
+          "capability write (+30)",
+          "last used 41 days ago — cooling (+10)",
+          "revocation possible via remove_collaborator (+0)",
+          "principal resolved as human (+0)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
+        "confidence": "probable",
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+      },
+      "grantId": "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c"
+    },
+    {
+      "id": "9f7fa8a7929c33f27104bb1798e9066ba49b08b381f96550194569d21569a589",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "downgrade",
+        "description": "Consider downgrading write on Ada / Team notes."
+      },
+      "irreversible": false,
+      "risk": {
+        "score": 30,
+        "reasons": [
+          "capability write (+30)",
+          "last used 5 days ago — recent (+0)",
+          "revocation possible via drive.permissions.delete (+0)",
+          "principal resolved as human (+0)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
+        "confidence": "probable",
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+      },
+      "grantId": "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344"
+    },
+    {
+      "id": "ec10165cab137035be4034fd29c647e5ca4a6a3bc2ca0476b867ce77c07f219c",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "downgrade",
+        "description": "Consider downgrading write on #eng-general."
+      },
+      "irreversible": false,
+      "risk": {
+        "score": 30,
+        "reasons": [
+          "capability write (+30)",
+          "last used 3 days ago — recent (+0)",
+          "revocation possible via conversations.kick (+0)",
+          "principal resolved as human (+0)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
+        "confidence": "probable",
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+      },
+      "grantId": "f7029468068e6bbca30d6c833c78613e2e856c2e3d85487662e5f28e89848885"
+    }
+  ],
+  "reconciliation": {
+    "clusters": [
+      {
+        "id": "5a438941cddfb6b451ae4130feb3bf46a43270e588e0ba7faf8aa8195ec4bdbe",
+        "kind": "human",
+        "displayName": "Ada Lovelace",
+        "personId": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
+        "identifiers": [
+          {
+            "kind": "personal_email",
+            "value": "ada.numbers.personal@gmail.com",
+            "source": "google_workspace"
+          },
+          {
+            "kind": "username",
+            "value": "ada.l",
+            "source": "slack"
+          },
+          {
+            "kind": "username",
+            "value": "analyticalengine",
+            "source": "github"
+          },
+          {
+            "kind": "work_email",
+            "value": "ada@keyring-test.example",
+            "source": "slack"
+          }
+        ],
+        "grantIds": [
+          "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344",
+          "f7029468068e6bbca30d6c833c78613e2e856c2e3d85487662e5f28e89848885",
+          "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6",
+          "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c",
+          "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
+        ],
+        "confidence": "probable",
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+      },
+      {
+        "id": "1399fb65abb03312666c8f4286fefe7509f1439504ad4eae6c15f784d620e11d",
+        "kind": "human",
+        "displayName": "Alan Turing",
+        "personId": "16688c5a9aa6ce82eae083218dfbadaa41446aa4758ff5218ce4e2446e0afd48",
+        "identifiers": [
+          {
+            "kind": "personal_email",
+            "value": "enigmamachine88@gmail.com",
+            "source": "google_workspace"
+          },
+          {
+            "kind": "username",
+            "value": "bombe-ops",
+            "source": "github"
+          },
+          {
+            "kind": "work_email",
+            "value": "alan@keyring-test.example",
+            "source": "google_workspace"
+          }
+        ],
+        "grantIds": [
+          "cbe573ddf3f017b1a4cc227a819a5e89686d29a64dbc4c1cb45e9cfcc9260d31",
+          "dd764f717c4b5e2ef1d0418c1a1f2d1b5522cf26b32b1b4f965d3d35cf9f5f0e",
+          "167488a03e72f0c13387eae4f209a300a1d015e414189419b6371cc442b4726b",
+          "c5ee63014158cea2aa23554f3aa40d8cf88f9cc89ab0a3dc213b198a4deb1691"
+        ],
+        "confidence": "certain",
+        "reasoning": "Attributed 4 grant(s) to Alan Turing. Inference chain: (certain) exact work-email match: Both grants carry work email alan@keyring-test.example → (certain) exact work-email match: Grant work email alan@keyring-test.example matches directory for Alan Turing → (certain) personal email present on the org directory record: Personal email enigmamachine88@gmail.com is listed on the directory record for Alan Turing → (certain) username listed on the org directory record: Username bombe-ops is listed on the directory record for Alan Turing"
+      },
+      {
+        "id": "edcf420a53cf8e754f10e1f31e118925e4769ee7694b142c8387fa004cbbe538",
+        "kind": "human",
+        "displayName": "Grace Hopper",
+        "personId": "62a71b9ef164d79a1ee0c76e6f82f3167621eafc31012a9e4a1a4ca9efa6e60e",
+        "identifiers": [
+          {
+            "kind": "personal_email",
+            "value": "grace.h.navy.mail@gmail.com",
+            "source": "google_workspace"
+          },
+          {
+            "kind": "username",
+            "value": "cobol-compiler",
+            "source": "github"
+          },
+          {
+            "kind": "work_email",
+            "value": "grace@keyring-test.example",
+            "source": "notion"
+          }
+        ],
+        "grantIds": [
+          "2ee65775094c4508d7aa627edff05f1cf7a80f129d5b129161ae621f1c1687d5",
+          "679058c31ac64945a6fee8890b23c9d50f4799eba62a81118773e68428ca96a1",
+          "0c35e443dbca2a083239e3d4fa609438706aab09b8c2b7bcfab283611c57909b",
+          "f188468b24cc04142c07854d366f7516946566cff2a5ec3d4cdce1a322bd5098"
+        ],
+        "confidence": "certain",
+        "reasoning": "Attributed 4 grant(s) to Grace Hopper. Inference chain: (certain) exact work-email match: Both grants carry work email grace@keyring-test.example → (certain) exact work-email match: Grant work email grace@keyring-test.example matches directory for Grace Hopper → (certain) personal email present on the org directory record: Personal email grace.h.navy.mail@gmail.com is listed on the directory record for Grace Hopper → (certain) username listed on the org directory record: Username cobol-compiler is listed on the directory record for Grace Hopper"
+      }
+    ],
+    "unknown": {
+      "grantIds": [
+        "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2",
+        "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86"
+      ],
+      "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+    }
+  },
+  "grantIds": [
+    "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2",
+    "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c",
+    "f188468b24cc04142c07854d366f7516946566cff2a5ec3d4cdce1a322bd5098",
+    "c5ee63014158cea2aa23554f3aa40d8cf88f9cc89ab0a3dc213b198a4deb1691",
+    "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86",
+    "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344",
+    "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6",
+    "2ee65775094c4508d7aa627edff05f1cf7a80f129d5b129161ae621f1c1687d5",
+    "0c35e443dbca2a083239e3d4fa609438706aab09b8c2b7bcfab283611c57909b",
+    "dd764f717c4b5e2ef1d0418c1a1f2d1b5522cf26b32b1b4f965d3d35cf9f5f0e",
+    "167488a03e72f0c13387eae4f209a300a1d015e414189419b6371cc442b4726b",
+    "679058c31ac64945a6fee8890b23c9d50f4799eba62a81118773e68428ca96a1",
+    "f7029468068e6bbca30d6c833c78613e2e856c2e3d85487662e5f28e89848885",
+    "cbe573ddf3f017b1a4cc227a819a5e89686d29a64dbc4c1cb45e9cfcc9260d31",
+    "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
+  ]
+}

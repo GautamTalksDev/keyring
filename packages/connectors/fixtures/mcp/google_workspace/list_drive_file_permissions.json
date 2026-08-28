@@ -1,0 +1,96 @@
+[
+  {
+    "when": { "fileId": "__inventory_roots__" },
+    "response": {
+      "files": [
+        {
+          "id": "ada-team-notes",
+          "name": "Ada / Team notes",
+          "createdTime": "2025-01-10T00:00:00.000Z",
+          "viewedByMeTime": "2026-08-20T00:00:00.000Z"
+        },
+        {
+          "id": "grace-onboarding",
+          "name": "Grace / Onboarding",
+          "createdTime": "2023-02-01T00:00:00.000Z",
+          "viewedByMeTime": "2026-08-10T00:00:00.000Z"
+        },
+        {
+          "id": "alan-research",
+          "name": "Alan / Research",
+          "viewedByMeTime": "2026-08-18T00:00:00.000Z"
+        }
+      ]
+    }
+  },
+  {
+    "when": { "fileId": "ada-team-notes" },
+    "response": {
+      "permissions": [
+        {
+          "emailAddress": "ada@keyring-test.example",
+          "role": "writer"
+        }
+      ]
+    }
+  },
+  {
+    "when": { "fileId": "grace-onboarding" },
+    "response": {
+      "permissions": [
+        {
+          "emailAddress": "grace@keyring-test.example",
+          "role": "owner"
+        }
+      ]
+    }
+  },
+  {
+    "when": { "fileId": "alan-research" },
+    "response": {
+      "permissions": [
+        {
+          "emailAddress": "alan@keyring-test.example",
+          "role": "writer"
+        }
+      ]
+    }
+  },
+  {
+    "when": { "fileId": "board-compensation-2024" },
+    "response": {
+      "permissions": [
+        {
+          "emailAddress": "ada.numbers.personal@gmail.com",
+          "role": "reader"
+        }
+      ]
+    }
+  },
+  {
+    "when": { "fileId": "customer-contracts-vault" },
+    "response": {
+      "permissions": [
+        {
+          "emailAddress": "grace.h.navy.mail@gmail.com",
+          "role": "writer"
+        }
+      ]
+    }
+  },
+  {
+    "when": { "fileId": "incident-war-room-exports" },
+    "response": {
+      "permissions": [
+        {
+          "emailAddress": "enigmamachine88@gmail.com",
+          "role": "reader"
+        }
+      ]
+    }
+  },
+  {
+    "default": true,
+    "response": { "permissions": [] }
+  }
+]

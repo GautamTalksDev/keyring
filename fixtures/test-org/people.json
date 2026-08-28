@@ -1,0 +1,32 @@
+{
+  "org": "keyring-test",
+  "people": [
+    {
+      "key": "ada",
+      "displayName": "Ada Lovelace",
+      "workEmail": "ada@keyring-test.example",
+      "personalEmail": "ada.numbers.personal@gmail.com",
+      "githubUsername": "analyticalengine",
+      "slackUserId": "U_ADA_TEST",
+      "slackDisplayName": "ada.l"
+    },
+    {
+      "key": "grace",
+      "displayName": "Grace Hopper",
+      "workEmail": "grace@keyring-test.example",
+      "personalEmail": "grace.h.navy.mail@gmail.com",
+      "githubUsername": "cobol-compiler",
+      "slackUserId": "U_GRACE_TEST",
+      "slackDisplayName": "ghopper"
+    },
+    {
+      "key": "alan",
+      "displayName": "Alan Turing",
+      "workEmail": "alan@keyring-test.example",
+      "personalEmail": "enigmamachine88@gmail.com",
+      "githubUsername": "bombe-ops",
+      "slackUserId": "U_ALAN_TEST",
+      "slackDisplayName": "a.turing"
+    }
+  ]
+}

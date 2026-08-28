@@ -1,0 +1,174 @@
+{
+  "exportedAt": "2026-08-25T02:19:19.298Z",
+  "verification": {
+    "ok": true,
+    "count": 5
+  },
+  "records": [
+    {
+      "id": "e22fe03080e4b0ed554cd4c8484a5278df24d92dda62af14cbad476897b938b8",
+      "cardId": "70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59",
+      "action": "approve",
+      "approvedBy": "auditor@keyring.test",
+      "approvedAt": "2026-08-25T02:19:19.262Z",
+      "executedAt": "2026-08-25T02:19:19.262Z",
+      "result": "success",
+      "error": null,
+      "evidenceSnapshot": [
+        {
+          "claim": "Private channel #exec-comp lists Ada as channel admin; channel is not in public workspace directory",
+          "source": "slack",
+          "confidence": "certain"
+        }
+      ],
+      "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "hash": "38bbd0550ec04acbd99fecf7214453e76880e12834db9957141a2854d002441b"
+    },
+    {
+      "id": "1bc0884ca419911a60612efd4dd32f3ee96bd5acdcaeda28dab538c0d34bd2ed",
+      "cardId": "70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59",
+      "action": "execute_revoke",
+      "approvedBy": "auditor@keyring.test",
+      "approvedAt": "2026-08-25T02:19:19.262Z",
+      "executedAt": "2026-08-25T02:19:19.274Z",
+      "result": "partial",
+      "error": "dry_run_attempt_started",
+      "evidenceSnapshot": [
+        {
+          "claim": "Private channel #exec-comp lists Ada as channel admin; channel is not in public workspace directory",
+          "source": "slack",
+          "confidence": "certain"
+        }
+      ],
+      "prevHash": "38bbd0550ec04acbd99fecf7214453e76880e12834db9957141a2854d002441b",
+      "hash": "add1b0ea4de45b93ce14ae18d702bae3f6f19c96434e7449c887b40be0043ad4"
+    },
+    {
+      "id": "4d7062469d41cfab11eb5de9b82b8c2d2979d30cf35ed22df9ce685ac6e65038",
+      "cardId": "70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59",
+      "action": "execute_revoke",
+      "approvedBy": "auditor@keyring.test",
+      "approvedAt": "2026-08-25T02:19:19.262Z",
+      "executedAt": "2026-08-25T02:19:19.278Z",
+      "result": "partial",
+      "error": "dry_run",
+      "evidenceSnapshot": [
+        {
+          "claim": "Private channel #exec-comp lists Ada as channel admin; channel is not in public workspace directory",
+          "source": "slack",
+          "confidence": "certain"
+        },
+        {
+          "claim": "dry_run: would revoke 196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e (approval 70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59 by auditor@keyring.test)",
+          "source": "keyring:execute",
+          "confidence": "certain"
+        },
+        {
+          "raw": {
+            "params": {
+              "grantId": "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e",
+              "principal": [
+                {
+                  "kind": "work_email",
+                  "value": "ada@keyring-test.example",
+                  "source": "slack"
+                },
+                {
+                  "kind": "username",
+                  "value": "ada.l",
+                  "source": "slack"
+                }
+              ],
+              "capability": "admin",
+              "resourceId": "G_PRIVATE_EXEC_COMP"
+            },
+            "system": "slack",
+            "permission": "admin",
+            "restorable": true,
+            "restoreMethod": "restore_via_admin.conversations.remove"
+          },
+          "claim": "UNDO HINT restorable=true permission=admin via restore_via_admin.conversations.remove",
+          "source": "keyring:undo_hint",
+          "confidence": "certain"
+        }
+      ],
+      "prevHash": "add1b0ea4de45b93ce14ae18d702bae3f6f19c96434e7449c887b40be0043ad4",
+      "hash": "d22b5543ffcb7aeeea912e3d6d4a5ffe21cc639ea022a41e6dd6c1df354c826d"
+    },
+    {
+      "id": "0fa91bd80ad49d1e538b5e192a3d6bf1d5f718a4c3d37ce128e8bfada9074aba",
+      "cardId": "70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59",
+      "action": "execute_revoke",
+      "approvedBy": "auditor@keyring.test",
+      "approvedAt": "2026-08-25T02:19:19.262Z",
+      "executedAt": "2026-08-25T02:19:19.284Z",
+      "result": "partial",
+      "error": "attempt_started",
+      "evidenceSnapshot": [
+        {
+          "claim": "Private channel #exec-comp lists Ada as channel admin; channel is not in public workspace directory",
+          "source": "slack",
+          "confidence": "certain"
+        }
+      ],
+      "prevHash": "d22b5543ffcb7aeeea912e3d6d4a5ffe21cc639ea022a41e6dd6c1df354c826d",
+      "hash": "76d1546eb3fc83113a69c29cbe07854d1b6e475b3e3c70803224feb6b44bf313"
+    },
+    {
+      "id": "443c8f1ece8ea74d9f62771e181d19a57054908534f66bc77bbc2c60c80f11b3",
+      "cardId": "70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59",
+      "action": "execute_revoke",
+      "approvedBy": "auditor@keyring.test",
+      "approvedAt": "2026-08-25T02:19:19.262Z",
+      "executedAt": "2026-08-25T02:19:19.288Z",
+      "result": "success",
+      "error": null,
+      "evidenceSnapshot": [
+        {
+          "claim": "Private channel #exec-comp lists Ada as channel admin; channel is not in public workspace directory",
+          "source": "slack",
+          "confidence": "certain"
+        },
+        {
+          "claim": "fixture revoke 196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e (approval 70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59 by auditor@keyring.test)",
+          "source": "keyring:execute",
+          "confidence": "certain"
+        },
+        {
+          "raw": {
+            "params": {
+              "grantId": "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e",
+              "principal": [
+                {
+                  "kind": "work_email",
+                  "value": "ada@keyring-test.example",
+                  "source": "slack"
+                },
+                {
+                  "kind": "username",
+                  "value": "ada.l",
+                  "source": "slack"
+                }
+              ],
+              "capability": "admin",
+              "resourceId": "G_PRIVATE_EXEC_COMP"
+            },
+            "system": "slack",
+            "permission": "admin",
+            "restorable": true,
+            "restoreMethod": "restore_via_admin.conversations.remove"
+          },
+          "claim": "UNDO HINT restorable=true permission=admin via restore_via_admin.conversations.remove",
+          "source": "keyring:undo_hint",
+          "confidence": "certain"
+        }
+      ],
+      "prevHash": "76d1546eb3fc83113a69c29cbe07854d1b6e475b3e3c70803224feb6b44bf313",
+      "hash": "cfc79c9be87f7cf04b0a8c6f84ad7213fb431eca7f0b7ba8c197341c6fd9cb79"
+    }
+  ],
+  "signature": {
+    "algorithm": "hmac-sha256",
+    "value": "987dd2e33cd9d11c9f832a4c82d3e9cb247ad8a6f8cfcf0d23ecc312ff522ec5"
+  }
+}
