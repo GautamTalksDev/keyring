@@ -20,10 +20,23 @@ type Action =
   | { type: "reset" }
   | { type: "dismiss_error" }
   | { type: "scan_starting"; person: string }
-  | { type: "scan_started"; scanId: string; person: string; driver?: string | null; recordingId?: string | null }
+  | {
+      type: "scan_started";
+      scanId: string;
+      person: string;
+      driver?: string | null;
+      recordingId?: string | null;
+    }
   | { type: "scan_error"; error: string }
   | { type: "event"; event: ScanProgressEvent }
-  | { type: "cards"; cards: ApiCard[]; status: string; costs?: AgentActivityState["costs"]; driver?: string | null; recordingId?: string | null }
+  | {
+      type: "cards";
+      cards: ApiCard[];
+      status: string;
+      costs?: AgentActivityState["costs"];
+      driver?: string | null;
+      recordingId?: string | null;
+    }
   | { type: "card_updated"; card: ApiCard };
 
 const emptyActivity = (): AgentActivityState => ({
@@ -140,9 +153,7 @@ function reduce(state: State, action: Action): State {
     case "card_updated":
       return {
         ...state,
-        cards: state.cards.map((c) =>
-          c.id === action.card.id ? action.card : c,
-        ),
+        cards: state.cards.map((c) => (c.id === action.card.id ? action.card : c)),
       };
     case "event":
       return { ...state, activity: applyEvent(state.activity, action.event) };
@@ -151,10 +162,7 @@ function reduce(state: State, action: Action): State {
   }
 }
 
-function applyEvent(
-  activity: AgentActivityState,
-  event: ScanProgressEvent,
-): AgentActivityState {
+function applyEvent(activity: AgentActivityState, event: ScanProgressEvent): AgentActivityState {
   const at = event.at ?? new Date().toISOString();
   switch (event.type) {
     case "scan.started":
@@ -164,12 +172,26 @@ function applyEvent(
         "info",
         at,
       );
+    case "subagent.queued": {
+      const systemId = String(event.systemId);
+      const sub: SubagentState = {
+        systemId,
+        displayName: String(event.displayName ?? systemId),
+        status: "queued",
+        found: 0,
+        startedAt: at,
+      };
+      return {
+        ...activity,
+        subagents: { ...activity.subagents, [systemId]: sub },
+      };
+    }
     case "subagent.started": {
       const systemId = String(event.systemId);
       const sub: SubagentState = {
         systemId,
         displayName: String(event.displayName ?? systemId),
-        status: "running",
+        status: "scanning",
         found: 0,
         startedAt: at,
       };
@@ -191,7 +213,11 @@ function applyEvent(
         ...activity,
         subagents: {
           ...activity.subagents,
-          [systemId]: { ...prev, found: Number(event.found ?? 0) },
+          [systemId]: {
+            ...prev,
+            status: "scanning",
+            found: Number(event.found ?? 0),
+          },
         },
       };
     }
@@ -251,6 +277,12 @@ function applyEvent(
       return pushLog(
         {
           ...activity,
+          subagents: Object.fromEntries(
+            Object.entries(activity.subagents).map(([systemId, subagent]) => [
+              systemId,
+              { ...subagent, status: "reconciling" as const },
+            ]),
+          ),
           sandbox: {
             active: true,
             label: "Sandbox",
@@ -265,6 +297,12 @@ function applyEvent(
       return pushLog(
         {
           ...activity,
+          subagents: Object.fromEntries(
+            Object.entries(activity.subagents).map(([systemId, subagent]) => [
+              systemId,
+              { ...subagent, status: "done" as const },
+            ]),
+          ),
           sandbox: {
             active: false,
             label: "Sandbox",
@@ -276,12 +314,7 @@ function applyEvent(
         at,
       );
     case "cards.persisted":
-      return pushLog(
-        activity,
-        `${Number(event.cardCount ?? 0)} approval cards ready`,
-        "info",
-        at,
-      );
+      return pushLog(activity, `${Number(event.cardCount ?? 0)} approval cards ready`, "info", at);
     case "scan.completed":
       return pushLog(
         {
@@ -295,16 +328,12 @@ function applyEvent(
           ...(event.costs
             ? {
                 costs: {
-                  inputTokens: Number(
-                    (event.costs as { inputTokens?: number }).inputTokens ?? 0,
-                  ),
+                  inputTokens: Number((event.costs as { inputTokens?: number }).inputTokens ?? 0),
                   outputTokens: Number(
                     (event.costs as { outputTokens?: number }).outputTokens ?? 0,
                   ),
                   costUsd: Number((event.costs as { costUsd?: number }).costUsd ?? 0),
-                  hardCapUsd: Number(
-                    (event.costs as { hardCapUsd?: number }).hardCapUsd ?? 0,
-                  ),
+                  hardCapUsd: Number((event.costs as { hardCapUsd?: number }).hardCapUsd ?? 0),
                   capped: Boolean((event.costs as { capped?: boolean }).capped),
                 },
               }
@@ -329,16 +358,12 @@ function applyEvent(
           ...(event.costs
             ? {
                 costs: {
-                  inputTokens: Number(
-                    (event.costs as { inputTokens?: number }).inputTokens ?? 0,
-                  ),
+                  inputTokens: Number((event.costs as { inputTokens?: number }).inputTokens ?? 0),
                   outputTokens: Number(
                     (event.costs as { outputTokens?: number }).outputTokens ?? 0,
                   ),
                   costUsd: Number((event.costs as { costUsd?: number }).costUsd ?? 0),
-                  hardCapUsd: Number(
-                    (event.costs as { hardCapUsd?: number }).hardCapUsd ?? 0,
-                  ),
+                  hardCapUsd: Number((event.costs as { hardCapUsd?: number }).hardCapUsd ?? 0),
                   capped: true,
                 },
               }
@@ -366,10 +391,7 @@ function applyEvent(
           status: "partial",
           error: String(event.error ?? "Partial scan"),
           errorKind: "partial",
-          recovery: recoveryFor(
-            "partial",
-            event.recovery != null ? String(event.recovery) : null,
-          ),
+          recovery: recoveryFor("partial", event.recovery != null ? String(event.recovery) : null),
           sandbox: { ...activity.sandbox, active: false },
           grantsDiscovered:
             event.grantsDiscovered != null
@@ -378,16 +400,12 @@ function applyEvent(
           ...(event.costs
             ? {
                 costs: {
-                  inputTokens: Number(
-                    (event.costs as { inputTokens?: number }).inputTokens ?? 0,
-                  ),
+                  inputTokens: Number((event.costs as { inputTokens?: number }).inputTokens ?? 0),
                   outputTokens: Number(
                     (event.costs as { outputTokens?: number }).outputTokens ?? 0,
                   ),
                   costUsd: Number((event.costs as { costUsd?: number }).costUsd ?? 0),
-                  hardCapUsd: Number(
-                    (event.costs as { hardCapUsd?: number }).hardCapUsd ?? 0,
-                  ),
+                  hardCapUsd: Number((event.costs as { hardCapUsd?: number }).hardCapUsd ?? 0),
                   capped: Boolean((event.costs as { capped?: boolean }).capped),
                 },
               }
@@ -399,19 +417,14 @@ function applyEvent(
       );
     case "scan.failed": {
       const msg = String(event.error ?? "Scan failed");
-      const kind = String(
-        event.errorKind ?? classifyClientError(msg),
-      );
+      const kind = String(event.errorKind ?? classifyClientError(msg));
       return pushLog(
         {
           ...activity,
           status: "failed",
           error: msg,
           errorKind: kind,
-          recovery: recoveryFor(
-            kind,
-            event.recovery != null ? String(event.recovery) : null,
-          ),
+          recovery: recoveryFor(kind, event.recovery != null ? String(event.recovery) : null),
           sandbox: { ...activity.sandbox, active: false },
         },
         msg,

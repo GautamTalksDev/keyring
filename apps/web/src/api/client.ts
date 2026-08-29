@@ -1,14 +1,8 @@
 import type { ApiCard, ExecuteResult, ScanCostSnapshot, ScanProgressEvent } from "./types.js";
 
-const base = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(
-  /\/$/,
-  "",
-) ?? "";
+const base = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ?? "";
 
-async function request<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${base}${path}`, {
     ...init,
     headers: {
@@ -36,11 +30,7 @@ export async function startScan(input: {
 }> {
   const driver =
     (import.meta.env.VITE_SCAN_DRIVER as
-      | "fixture"
-      | "trueforge"
-      | "record"
-      | "replay"
-      | undefined) ??
+      "fixture" | "trueforge" | "record" | "replay" | undefined) ??
     input.driver ??
     "fixture";
   return request("/scans", {
@@ -127,6 +117,7 @@ export function subscribeScanStream(
   es.addEventListener("snapshot", (e) => forward("snapshot", (e as MessageEvent).data));
   const types = [
     "scan.started",
+    "subagent.queued",
     "subagent.started",
     "subagent.progress",
     "subagent.done",

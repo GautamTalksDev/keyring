@@ -11,11 +11,7 @@ import {
 import { newScanId, scanBus, scanLog, type ScanProgressEvent } from "../api/progress.js";
 import type { CreateScanBody } from "../api/schemas.js";
 import { loadCostConfig, modelForRole } from "../costs/config.js";
-import {
-  CostCapExceededError,
-  ScanCostLedger,
-  type ScanCostSnapshot,
-} from "../costs/ledger.js";
+import { CostCapExceededError, ScanCostLedger, type ScanCostSnapshot } from "../costs/ledger.js";
 import type { Database } from "../db/client.js";
 import {
   createScanRun,
@@ -26,21 +22,11 @@ import {
   upsertApprovalCard,
   upsertGrant,
 } from "../db/store.js";
-import {
-  classifyProductError,
-  recoveryFor,
-} from "../errors/classify.js";
+import { classifyProductError, recoveryFor } from "../errors/classify.js";
 import { ScanRecorder } from "../recording/recorder.js";
 import { loadRecording, saveRecording } from "../recording/store.js";
-import {
-  recordingIdFromPerson,
-  type ScanRecording,
-} from "../recording/types.js";
-import {
-  diffGrantSnapshots,
-  filterCardsToDiff,
-  type ScanDiff,
-} from "./scan-diff.js";
+import { recordingIdFromPerson, type ScanRecording } from "../recording/types.js";
+import { diffGrantSnapshots, filterCardsToDiff, type ScanDiff } from "./scan-diff.js";
 export type ScanDriver = "fixture" | "trueforge" | "record" | "replay";
 
 export interface StartScanResult {
@@ -49,6 +35,14 @@ export interface StartScanResult {
   status: "running";
   recordingId?: string;
 }
+
+const DEMO_SYSTEM_STAGGER_MS: Record<string, number> = {
+  aws: 80,
+  notion: 160,
+  slack: 240,
+  github: 320,
+  google_workspace: 400,
+};
 
 function resolveDriver(override?: ScanDriver): ScanDriver {
   if (override) return override;
@@ -96,8 +90,7 @@ export async function startScan(
   const driver = resolveDriver(body.driver);
   const logger = scanLog(log, scanId);
   const recordingId =
-    body.recordingId ??
-    (body.person ? recordingIdFromPerson(body.person) : "scan");
+    body.recordingId ?? (body.person ? recordingIdFromPerson(body.person) : "scan");
 
   await createScanRun(db, {
     id: scanId,
@@ -249,8 +242,7 @@ async function runFixtureFanOutAndPersist(
   },
 ): Promise<void> {
   const cfg = loadCostConfig();
-  const delay =
-    body.delayMsPerGrant ?? Number(process.env.KEYRING_SCAN_DELAY_MS ?? 0);
+  const delay = body.delayMsPerGrant ?? Number(process.env.KEYRING_SCAN_DELAY_MS ?? 0);
   const systems = await listConnectedSystems();
   const mergedIds: string[] = [];
   const failedSystems: Array<{
@@ -260,11 +252,11 @@ async function runFixtureFanOutAndPersist(
   }> = [];
   const { ledger, recorder } = opts;
 
-  for (const system of systems) {
-    if (opts.emitSubagents) {
+  if (opts.emitSubagents) {
+    for (const system of systems) {
       publish(
         {
-          type: "subagent.started",
+          type: "subagent.queued",
           scanId,
           systemId: system.id,
           displayName: system.displayName,
@@ -272,109 +264,140 @@ async function runFixtureFanOutAndPersist(
         },
         recorder,
       );
-      log.info({ systemId: system.id }, "subagent started");
     }
+  }
 
-    try {
-      // Mechanical inventory summarisation — cheap model role
-      const invModel = modelForRole("inventory");
-      const invIn = 800;
-      const invOut = 200;
-      try {
-        const snap = ledger.recordModelCall({
-          role: "inventory",
-          model: invModel,
-          inputTokens: invIn,
-          outputTokens: invOut,
-          note: `inventory_system:${system.id}`,
-        });
-        publishCost(scanId, snap, recorder);
-        recorder?.addModel({
-          at: new Date().toISOString(),
-          role: "inventory",
-          model: invModel,
-          inputTokens: invIn,
-          outputTokens: invOut,
-          costUsd: snap.lines.at(-1)?.costUsd ?? 0,
-          inputSummary: `Summarise inventory for ${system.id}`,
-          outputSummary: `compact grants for ${system.id}`,
-        });
-      } catch (err) {
-        if (err instanceof CostCapExceededError) {
-          publishCost(scanId, ledger.snapshot(), recorder);
-          throw err;
-        }
-        throw err;
-      }
-
-      const result = await inventorySystem(system.id, {
-        delayMsPerGrant: opts.emitSubagents ? delay : 0,
-      });
-      for (const g of result.grants) mergedIds.push(g.id);
-
-      recorder?.addTool({
-        at: new Date().toISOString(),
-        tool: "inventory_system",
-        arguments: { system_id: system.id },
-        resultSummary: `${result.count} grants`,
-      });
-
+  const grantsBySystem = new Map<string, string[]>();
+  await Promise.all(
+    systems.map(async (system) => {
       if (opts.emitSubagents) {
         publish(
           {
-            type: "subagent.progress",
+            type: "subagent.started",
             scanId,
             systemId: system.id,
-            found: result.count,
+            displayName: system.displayName,
             at: new Date().toISOString(),
           },
           recorder,
         );
-        publish(
-          {
-            type: "subagent.done",
-            scanId,
-            systemId: system.id,
-            found: result.count,
-            at: new Date().toISOString(),
-          },
-          recorder,
-        );
-        log.info({ systemId: system.id, found: result.count }, "subagent done");
+        log.info({ systemId: system.id }, "subagent started");
       }
-    } catch (err) {
-      if (err instanceof CostCapExceededError) throw err;
-      const classified = classifyProductError(err);
-      failedSystems.push({
-        systemId: system.id,
-        error: classified.message,
-        errorKind: classified.kind,
-      });
-      publish(
-        {
-          type: "subagent.failed",
-          scanId,
-          systemId: system.id,
-          displayName: system.displayName,
+
+      try {
+        // Mechanical inventory summarisation — cheap model role
+        const invModel = modelForRole("inventory");
+        const invIn = 800;
+        const invOut = 200;
+        try {
+          const snap = ledger.recordModelCall({
+            role: "inventory",
+            model: invModel,
+            inputTokens: invIn,
+            outputTokens: invOut,
+            note: `inventory_system:${system.id}`,
+          });
+          publishCost(scanId, snap, recorder);
+          recorder?.addModel({
+            at: new Date().toISOString(),
+            role: "inventory",
+            model: invModel,
+            inputTokens: invIn,
+            outputTokens: invOut,
+            costUsd: snap.lines.at(-1)?.costUsd ?? 0,
+            inputSummary: `Summarise inventory for ${system.id}`,
+            outputSummary: `compact grants for ${system.id}`,
+          });
+        } catch (err) {
+          if (err instanceof CostCapExceededError) {
+            publishCost(scanId, ledger.snapshot(), recorder);
+            throw err;
+          }
+          throw err;
+        }
+
+        if (opts.emitSubagents && opts.record) {
+          await pause(DEMO_SYSTEM_STAGGER_MS[system.id] ?? 200);
+        }
+        const result = await inventorySystem(system.id, {
+          delayMsPerGrant: opts.emitSubagents ? delay : 0,
+          onGrant: opts.emitSubagents
+            ? (found) => {
+                publish(
+                  {
+                    type: "subagent.progress",
+                    scanId,
+                    systemId: system.id,
+                    found,
+                    at: new Date().toISOString(),
+                  },
+                  recorder,
+                );
+              }
+            : undefined,
+        });
+        grantsBySystem.set(
+          system.id,
+          result.grants.map((grant) => grant.id),
+        );
+
+        recorder?.addTool({
           at: new Date().toISOString(),
+          tool: "inventory_system",
+          arguments: { system_id: system.id },
+          resultSummary: `${result.count} grants`,
+        });
+
+        if (opts.emitSubagents) {
+          publish(
+            {
+              type: "subagent.done",
+              scanId,
+              systemId: system.id,
+              found: result.count,
+              at: new Date().toISOString(),
+            },
+            recorder,
+          );
+          log.info({ systemId: system.id, found: result.count }, "subagent done");
+        }
+      } catch (err) {
+        if (err instanceof CostCapExceededError) throw err;
+        const classified = classifyProductError(err);
+        failedSystems.push({
+          systemId: system.id,
           error: classified.message,
           errorKind: classified.kind,
-          recovery: classified.recovery,
-        },
-        recorder,
-      );
-      log.warn(
-        { systemId: system.id, err, errorKind: classified.kind },
-        "subagent failed — continuing partial scan",
-      );
+        });
+        publish(
+          {
+            type: "subagent.failed",
+            scanId,
+            systemId: system.id,
+            displayName: system.displayName,
+            at: new Date().toISOString(),
+            error: classified.message,
+            errorKind: classified.kind,
+            recovery: classified.recovery,
+          },
+          recorder,
+        );
+        log.warn(
+          { systemId: system.id, err, errorKind: classified.kind },
+          "subagent failed — continuing partial scan",
+        );
+      }
+    }),
+  );
+  for (const system of systems) {
+    for (const grantId of grantsBySystem.get(system.id) ?? []) {
+      mergedIds.push(grantId);
     }
   }
 
   if (failedSystems.length > 0 && mergedIds.length === 0) {
     const first = failedSystems[0]!;
-    const err = new Error(
-      `All connectors failed (first: ${first.systemId}: ${first.error})`,
-    );
+    const err = new Error(`All connectors failed (first: ${first.systemId}: ${first.error})`);
     Object.assign(err, { status: first.errorKind === "rate_limit" ? 429 : 401 });
     throw err;
   }
@@ -427,9 +450,7 @@ async function runFixtureFanOutAndPersist(
     resultSummary: `${reconciliation.clusters.length} clusters, ${reconciliation.unknown.grantIds.length} unknown`,
   });
 
-  const grants = (await loadFullFixtureGrants()).filter((g) =>
-    mergedIds.includes(g.id),
-  );
+  const grants = (await loadFullFixtureGrants()).filter((g) => mergedIds.includes(g.id));
   let cards = buildApprovalCards({ grants, reconciliation, policy });
 
   if (body.person) {
@@ -437,9 +458,7 @@ async function runFixtureFanOutAndPersist(
     cards = cards.filter(
       (c) =>
         c.attribution.reasoning.toLowerCase().includes(hint) ||
-        c.grant.principal.identifiers.some((i) =>
-          i.value.toLowerCase().includes(hint),
-        ) ||
+        c.grant.principal.identifiers.some((i) => i.value.toLowerCase().includes(hint)) ||
         c.status === "held" ||
         c.attribution.resolvedTo === undefined ||
         c.protected === true,
@@ -449,9 +468,7 @@ async function runFixtureFanOutAndPersist(
   // Re-audit diff vs previous completed scan
   let diff: ScanDiff | null = null;
   const wantDiff =
-    body.reaudit === true ||
-    body.diffOnly === true ||
-    policy.reaudit?.diff_only === true;
+    body.reaudit === true || body.diffOnly === true || policy.reaudit?.diff_only === true;
   const prev = await getPreviousCompletedScan(db, scanId);
   const prevMeta = (prev?.metadata ?? null) as {
     grantIds?: string[];
@@ -483,8 +500,7 @@ async function runFixtureFanOutAndPersist(
   );
   const diffOnly =
     body.diffOnly === true ||
-    (body.reaudit === true &&
-      (body.diffOnly !== false && (policy.reaudit?.diff_only ?? true)));
+    (body.reaudit === true && body.diffOnly !== false && (policy.reaudit?.diff_only ?? true));
 
   publish(
     {
@@ -634,11 +650,16 @@ async function runReplay(
   );
 
   // Re-emit events with this scanId so SSE clients see live progress
+  let previousEventAt: number | null = null;
   for (const event of recording.events) {
+    const eventAt = Date.parse(event.at);
+    if (previousEventAt !== null && Number.isFinite(eventAt)) {
+      const recordedGap = Math.max(0, eventAt - previousEventAt);
+      await pause(Math.min(Math.max(recordedGap, 8), 180));
+    }
     const rewritten = { ...event, scanId } as ScanProgressEvent;
     scanBus.publish(rewritten);
-    // Tiny yield so UI can paint
-    await new Promise((r) => setTimeout(r, 5));
+    previousEventAt = Number.isFinite(eventAt) ? eventAt : previousEventAt;
   }
 
   const grants = await loadFullFixtureGrants();
@@ -669,9 +690,7 @@ async function runReplay(
   const selectedGrants = recording.grantIds
     .map((id) => byId.get(id))
     .filter((g): g is NonNullable<typeof g> => Boolean(g));
-  const { reconciliation, policy } = await runIdentityReconciliation(
-    recording.grantIds,
-  );
+  const { reconciliation, policy } = await runIdentityReconciliation(recording.grantIds);
   const recon = recording.reconciliation ?? reconciliation;
   let domainCards = buildApprovalCards({
     grants: selectedGrants,
@@ -683,9 +702,7 @@ async function runReplay(
     domainCards = domainCards.filter(
       (c) =>
         c.attribution.reasoning.toLowerCase().includes(hint) ||
-        c.grant.principal.identifiers.some((i) =>
-          i.value.toLowerCase().includes(hint),
-        ) ||
+        c.grant.principal.identifiers.some((i) => i.value.toLowerCase().includes(hint)) ||
         c.status === "held" ||
         c.attribution.resolvedTo === undefined,
     );
@@ -745,9 +762,7 @@ async function driveTrueForgeAgent(
   const client = new TrueForge({
     baseUrl,
     timeoutInSeconds: 600,
-    ...(process.env.TRUEFORGE_TOKEN
-      ? { token: process.env.TRUEFORGE_TOKEN }
-      : {}),
+    ...(process.env.TRUEFORGE_TOKEN ? { token: process.env.TRUEFORGE_TOKEN } : {}),
   });
 
   const prompt = body.person
@@ -777,9 +792,11 @@ async function driveTrueForgeAgent(
     const threadId = (event as { threadId?: string | null }).threadId ?? null;
 
     if (eventType === "model.message") {
-      const usage = (event as {
-        usage?: { input_tokens?: number; output_tokens?: number };
-      }).usage;
+      const usage = (
+        event as {
+          usage?: { input_tokens?: number; output_tokens?: number };
+        }
+      ).usage;
       if (usage) {
         const role = threadId && threadId !== "main" ? "inventory" : "reasoning";
         try {
@@ -862,6 +879,10 @@ async function driveTrueForgeAgent(
       }
     }
   }
+}
+
+function pause(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function serializeCardForRecording(card: {

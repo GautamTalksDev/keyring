@@ -4,10 +4,7 @@ import { EventEmitter } from "node:events";
 import type { FastifyBaseLogger } from "fastify";
 
 /** Child logger that always includes scanId when present. */
-export function scanLog(
-  log: FastifyBaseLogger,
-  scanId: string,
-): FastifyBaseLogger {
+export function scanLog(log: FastifyBaseLogger, scanId: string): FastifyBaseLogger {
   return log.child({ scanId });
 }
 
@@ -18,6 +15,13 @@ export type ScanProgressEvent =
       person?: string;
       scope?: string;
       driver: string;
+      at: string;
+    }
+  | {
+      type: "subagent.queued";
+      scanId: string;
+      systemId: string;
+      displayName: string;
       at: string;
     }
   | {
@@ -162,10 +166,7 @@ class ScanBus {
     return [...(this.buffers.get(scanId) ?? [])];
   }
 
-  subscribe(
-    scanId: string,
-    handler: (event: ScanProgressEvent) => void,
-  ): () => void {
+  subscribe(scanId: string, handler: (event: ScanProgressEvent) => void): () => void {
     const ee = this.ensure(scanId);
     ee.on("event", handler);
     return () => {

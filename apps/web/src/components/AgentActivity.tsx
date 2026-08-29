@@ -26,9 +26,7 @@ export function AgentActivity({
           <StatusPill status={activity.status} />
         </div>
         {activity.person ? (
-          <p className="mt-1 font-mono text-[12px] text-[var(--color-mute)]">
-            {activity.person}
-          </p>
+          <p className="mt-1 font-mono text-[12px] text-[var(--color-mute)]">{activity.person}</p>
         ) : null}
       </header>
 
@@ -47,9 +45,7 @@ export function AgentActivity({
               <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.06em]">
                 <span
                   className={`inline-block h-1.5 w-1.5 ${
-                    activity.sandbox.active
-                      ? "animate-pulse bg-white"
-                      : "bg-[var(--color-mute)]"
+                    activity.sandbox.active ? "animate-pulse bg-white" : "bg-[var(--color-mute)]"
                   }`}
                 />
                 Sandbox
@@ -69,9 +65,7 @@ export function AgentActivity({
             </h3>
             <ul className="mt-2 space-y-1">
               {subagents.length === 0 ? (
-                <li className="py-2 text-[12px] text-[var(--color-faint)]">
-                  Waiting for systems…
-                </li>
+                <li className="py-2 text-[12px] text-[var(--color-faint)]">Waiting for systems…</li>
               ) : (
                 subagents.map((s) => (
                   <li
@@ -79,9 +73,7 @@ export function AgentActivity({
                     className="flex items-center justify-between gap-2 border border-[var(--color-line)] bg-[var(--color-surface)] px-2.5 py-2"
                   >
                     <div className="min-w-0">
-                      <div className="truncate text-[13px] font-medium">
-                        {s.displayName}
-                      </div>
+                      <div className="truncate text-[13px] font-medium">{s.displayName}</div>
                       <div className="font-mono text-[11px] text-[var(--color-faint)]">
                         {s.systemId}
                       </div>
@@ -89,15 +81,23 @@ export function AgentActivity({
                     <div className="shrink-0 text-right">
                       <div
                         className={`text-[11px] font-medium uppercase tracking-wide ${
-                          s.status === "running"
+                          s.status === "scanning" || s.status === "reconciling"
                             ? "text-[var(--color-ink)]"
-                            : "text-[var(--color-ok)]"
+                            : s.status === "queued"
+                              ? "text-[var(--color-faint)]"
+                              : "text-[var(--color-ok)]"
                         }`}
                       >
-                        {s.status === "running" ? "Scanning" : "Done"}
+                        {s.status === "queued"
+                          ? "Queued"
+                          : s.status === "scanning"
+                            ? "Scanning"
+                            : s.status === "reconciling"
+                              ? "Reconciling"
+                              : "Done"}
                       </div>
                       <div className="font-mono text-[12px] text-[var(--color-mute)]">
-                        {s.found}
+                        {s.found} found
                       </div>
                     </div>
                   </li>
@@ -193,8 +193,8 @@ function StartForm({
       {!compact ? (
         <>
           <p className="text-[13px] leading-relaxed text-[var(--color-mute)]">
-            Start an access audit. The agent fans out one subagent per connected
-            system, reconciles identities in the sandbox, then fills the queue.
+            Start an access audit. The agent fans out one subagent per connected system, reconciles
+            identities in the sandbox, then fills the queue.
           </p>
           <label className="mt-6 block text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-faint)]">
             Person
