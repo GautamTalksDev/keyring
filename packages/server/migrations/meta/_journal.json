@@ -15,6 +15,13 @@
       "when": 1756076400000,
       "tag": "0001_approval_cards_scan_id",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756500000000,
+      "tag": "0002_audit_chain_seq",
+      "breakpoints": true
     }
   ]
 }

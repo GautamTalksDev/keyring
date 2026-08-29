@@ -273,7 +273,7 @@ export async function handleMutateTool(
     );
 
     const card = ctx.db ? await getApprovalCard(ctx.db, approvalCardId) : null;
-    let grant =
+    const grant =
       card?.grant ??
       (await loadFullFixtureGrants()).find((g) => g.id === grantId);
 

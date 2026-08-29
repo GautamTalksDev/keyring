@@ -7,8 +7,20 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { AppDb } from "./client.js";
 import { auditRecords } from "./schema.js";
-import { getLatestAuditHash } from "./store.js";
+import {
+  appendChainedAudit,
+  getLatestAuditHash,
+  verifyStoredAuditChain,
+} from "./store.js";
 import { openTestDatabase } from "./test-db.js";
+
+const evidence = [
+  {
+    claim: "integration test insert",
+    source: "test",
+    confidence: "certain" as const,
+  },
+];
 
 describe("audit_records append-only", () => {
   let db: AppDb;
@@ -35,13 +47,7 @@ describe("audit_records append-only", () => {
       approvedAt: new Date(),
       executedAt: new Date(),
       result: "success",
-      evidenceSnapshot: [
-        {
-          claim: "integration test insert",
-          source: "test",
-          confidence: "certain",
-        },
-      ],
+      evidenceSnapshot: evidence,
       prevHash,
     });
 
@@ -65,5 +71,43 @@ describe("audit_records append-only", () => {
         .set({ result: "failed" })
         .where(sql`id = ${record.id}`),
     ).rejects.toThrow(/append-only/i);
+  });
+
+  it("keeps a valid chain across rapid sequential appends", async () => {
+    const before = await verifyStoredAuditChain(db);
+    for (let i = 0; i < 20; i++) {
+      await appendChainedAudit(db, {
+        cardId: asApprovalCardId(`card-seq-${i}-${crypto.randomUUID()}`),
+        action: "approve",
+        approvedBy: "judge@acme.com",
+        approvedAt: new Date(),
+        executedAt: new Date(),
+        result: "success",
+        evidenceSnapshot: evidence,
+      });
+    }
+    const after = await verifyStoredAuditChain(db);
+    expect(after.ok).toBe(true);
+    expect(after.count).toBe(before.count + 20);
+  });
+
+  it("keeps a valid chain when appends race", async () => {
+    const before = await verifyStoredAuditChain(db);
+    await Promise.all(
+      Array.from({ length: 10 }, (_, i) =>
+        appendChainedAudit(db, {
+          cardId: asApprovalCardId(`card-race-${i}-${crypto.randomUUID()}`),
+          action: "approve",
+          approvedBy: "judge@acme.com",
+          approvedAt: new Date(),
+          executedAt: new Date(),
+          result: "success",
+          evidenceSnapshot: evidence,
+        }),
+      ),
+    );
+    const after = await verifyStoredAuditChain(db);
+    expect(after.ok).toBe(true);
+    expect(after.count).toBe(before.count + 10);
   });
 });
