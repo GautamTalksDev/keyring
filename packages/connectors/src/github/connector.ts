@@ -432,12 +432,14 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
         return { ok: false, error: "not a github grant" };
       }
 
-      const login = grant.principal.identifiers.find((i) => i.kind === "username")?.value;
+      const login = grant.principal.identifiers.find(
+        (i: Identifier) => i.kind === "username",
+      )?.value;
       const resourceId = String(grant.resource.id);
       const teamMatch = resourceId.match(/^([^/]+)\/team:(.+)$/);
       const patMatch = resourceId.match(/^([^/]+)\/pat:(.+)$/);
       const deployKeyId = grant.principal.identifiers.find(
-        (i) => i.kind === "key_id" && i.source === "github_deploy_keys",
+        (i: Identifier) => i.kind === "key_id" && i.source === "github_deploy_keys",
       )?.value;
 
       // --- Team membership ---

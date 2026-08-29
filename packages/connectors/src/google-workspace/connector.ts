@@ -1,4 +1,4 @@
-import { createGrant, type Grant } from "@keyring/core";
+import { createGrant, type Grant, type Identifier } from "@keyring/core";
 
 import { asArray, asObject, callJson, paginateTokens } from "../mcp/paginate.js";
 import { McpToolError, type McpToolCaller } from "../mcp/types.js";
@@ -374,7 +374,8 @@ export function createGoogleWorkspaceConnector(
         return { ok: false, error: "not a google_workspace grant" };
       }
       const email = grant.principal.identifiers.find(
-        (i) => i.kind === "work_email" || i.kind === "personal_email",
+        (i: Identifier) =>
+          i.kind === "work_email" || i.kind === "personal_email",
       )?.value;
       if (!email) return { ok: false, error: "missing email identifier" };
 
