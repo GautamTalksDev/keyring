@@ -12,8 +12,11 @@ import {
 } from "@keyring/core";
 import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
 
-import type { Database } from "./client.js";
+import type { AppDb, Database } from "./client.js";
 import { approvalCards, auditRecords, grants, scanRuns } from "./schema.js";
+
+/** Serialize hash-chain appends so two writers cannot share a prevHash. */
+const AUDIT_CHAIN_LOCK = sql`SELECT pg_advisory_xact_lock(hashtext('keyring.audit_records.chain'))`;
 
 export async function upsertGrant(
   db: Database["db"],
@@ -287,12 +290,12 @@ export async function hasSuccessfulExecute(
 }
 
 export async function getLatestAuditHash(
-  db: Database["db"],
+  db: AppDb,
 ): Promise<typeof GENESIS_HASH> {
   const rows = await db
     .select({ hash: auditRecords.hash })
     .from(auditRecords)
-    .orderBy(desc(auditRecords.recordedAt), desc(auditRecords.id))
+    .orderBy(desc(auditRecords.seq))
     .limit(1);
   const hash = rows[0]?.hash;
   return hash ? asHashHex(hash) : GENESIS_HASH;
@@ -315,7 +318,7 @@ export async function listAuditRecords(
     .select()
     .from(auditRecords)
     .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(asc(auditRecords.recordedAt), asc(auditRecords.id))
+    .orderBy(asc(auditRecords.seq))
     .limit(opts.limit)
     .offset(opts.offset);
 
@@ -331,7 +334,7 @@ export async function listAuditChain(
     .select()
     .from(auditRecords)
     .where(opts.cardId ? eq(auditRecords.cardId, opts.cardId) : undefined)
-    .orderBy(asc(auditRecords.recordedAt), asc(auditRecords.id));
+    .orderBy(asc(auditRecords.seq));
   return rows.map(rowToAudit);
 }
 
@@ -343,15 +346,19 @@ export async function verifyStoredAuditChain(
 }
 
 export async function appendChainedAudit(
-  db: Database["db"],
+  db: AppDb,
   input: Omit<Parameters<typeof appendAuditRecord>[0], "prevHash"> & {
     prevHash?: typeof GENESIS_HASH;
   },
 ): Promise<AuditRecord> {
-  const prevHash = input.prevHash ?? (await getLatestAuditHash(db));
-  const record = appendAuditRecord({ ...input, prevHash });
-  await appendAuditRecordRow(db, record);
-  return record;
+  return await db.transaction(async (tx) => {
+    await tx.execute(AUDIT_CHAIN_LOCK);
+    const conn = tx as unknown as AppDb;
+    const prevHash = input.prevHash ?? (await getLatestAuditHash(conn));
+    const record = appendAuditRecord({ ...input, prevHash });
+    await appendAuditRecordRow(conn, record);
+    return record;
+  });
 }
 
 function rowToCard(row: typeof approvalCards.$inferSelect): ApprovalCard {

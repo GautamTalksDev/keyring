@@ -1,4 +1,5 @@
 import {
+  bigserial,
   boolean,
   integer,
   jsonb,
@@ -57,9 +58,11 @@ export const auditRecords = pgTable("audit_records", {
   result: text("result").notNull(),
   error: text("error"),
   evidenceSnapshot: jsonb("evidence_snapshot").notNull(),
-  prevHash: text("prev_hash").notNull(),
+  prevHash: text("prev_hash").notNull().unique(),
   hash: text("hash").notNull(),
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
+  /** Monotonic insert order. recordedAt is not unique at millisecond resolution. */
+  seq: bigserial("seq", { mode: "number" }).notNull(),
 });
 
 export const scanRuns = pgTable("scan_runs", {

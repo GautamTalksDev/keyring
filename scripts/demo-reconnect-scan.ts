@@ -69,9 +69,6 @@ async function main() {
     `/api/v1/sessions/${sessionId}/turns`,
   ];
 
-  let turnId: string | undefined;
-  let lastSeq = 0;
-
   // Non-streaming create so the turn keeps running server-side when we "kill the tab"
   let turnRes: { status: number; json: unknown } | null = null;
   for (const p of turnPathCandidates) {
@@ -87,7 +84,11 @@ async function main() {
   }
 
   const turnBody = turnRes.json as { id?: string; data?: { id: string } };
-  turnId = turnBody.id ?? turnBody.data?.id;
+  const turnId = turnBody.id ?? turnBody.data?.id;
+  if (!turnId) {
+    console.error("No turn id", turnRes.json);
+    process.exit(1);
+  }
   console.log("turn:", turnId, "(browser tab killed — we drop the client stream)");
 
   // Simulate disconnect: wait a bit while inventory delays tick
@@ -120,7 +121,7 @@ async function main() {
     await new Promise((r) => setTimeout(r, 1000));
   }
 
-  console.log("Timed out still running (that still proves persistence). lastSeq=", lastSeq);
+  console.log("Timed out still running (that still proves persistence).");
   console.log("Open TrueForge UI, find session", sessionId, "— it should show progress.");
 }
 
