@@ -13,8 +13,8 @@
   "types": "./dist/index.d.ts",
   "files": ["dist", "fixtures"],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "build": "tsc -b tsconfig.json --pretty false",
+    "typecheck": "tsc -b tsconfig.json --pretty false"
   },
   "dependencies": {
     "@keyring/core": "workspace:*"

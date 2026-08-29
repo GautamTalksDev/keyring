@@ -2,7 +2,7 @@ import {
   appendAuditRecord,
   asApprovalCardId,
 } from "@keyring/core";
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { AppDb } from "./client.js";
@@ -109,5 +109,59 @@ describe("audit_records append-only", () => {
     const after = await verifyStoredAuditChain(db);
     expect(after.ok).toBe(true);
     expect(after.count).toBe(before.count + 10);
+  });
+
+  it("restores the timestamp default after concurrent identical-time appends", async () => {
+    const recordedAt = "2026-08-29T23:00:00.000Z";
+
+    try {
+      await db.execute(
+        sql`ALTER TABLE audit_records ALTER COLUMN recorded_at SET DEFAULT '2026-08-29T23:00:00.000Z'::timestamptz`,
+      );
+
+      const appended = await Promise.all(
+        Array.from({ length: 20 }, (_, i) =>
+          appendChainedAudit(db, {
+            cardId: asApprovalCardId(
+              `card-identical-recorded-at-${i}-${crypto.randomUUID()}`,
+            ),
+            action: "approve",
+            approvedBy: "judge@acme.com",
+            approvedAt: new Date(recordedAt),
+            executedAt: new Date(recordedAt),
+            result: "success",
+            evidenceSnapshot: evidence,
+          }),
+        ),
+      );
+
+      const appendedRows = await db
+        .select({
+          id: auditRecords.id,
+          recordedAt: auditRecords.recordedAt,
+        })
+        .from(auditRecords)
+        .where(
+          inArray(
+            auditRecords.id,
+            appended.map((record) => record.id),
+          ),
+        );
+      expect(appendedRows).toHaveLength(20);
+      expect(
+        new Set(appendedRows.map((row) => row.recordedAt.toISOString())),
+      ).toEqual(new Set([recordedAt]));
+
+      const allRows = await db
+        .select({ prevHash: auditRecords.prevHash })
+        .from(auditRecords);
+      const prevHashes = allRows.map((row) => row.prevHash);
+      expect(new Set(prevHashes).size).toBe(prevHashes.length);
+      expect((await verifyStoredAuditChain(db)).ok).toBe(true);
+    } finally {
+      await db.execute(
+        sql`ALTER TABLE audit_records ALTER COLUMN recorded_at SET DEFAULT now()`,
+      );
+    }
   });
 });
