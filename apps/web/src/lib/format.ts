@@ -2,6 +2,41 @@ import type { ApiCard } from "../api/types.js";
 
 const MS_DAY = 86_400_000;
 
+export interface ScanSummaryCounts {
+  grants: number;
+  systems: number;
+  unattributed: number;
+  overYearIdle: number;
+  irreversible: number;
+}
+
+export function countScanSummary(
+  cards: ApiCard[],
+  systemIds: Iterable<string> = cards.map((card) => card.grant.system),
+  now = new Date(),
+): ScanSummaryCounts {
+  return {
+    grants: cards.length,
+    systems: new Set(systemIds).size,
+    unattributed: cards.filter(isUnattributed).length,
+    overYearIdle: cards.filter((card) => staleness(card.grant.lastUsedAt, now).level === "critical")
+      .length,
+    irreversible: cards.filter((card) => card.irreversible).length,
+  };
+}
+
+export function scanSummaryText(counts: ScanSummaryCounts): string {
+  const clauses = [
+    `${counts.grants} grant${counts.grants === 1 ? "" : "s"} across ${counts.systems} system${counts.systems === 1 ? "" : "s"}.`,
+    counts.unattributed > 0 ? `${counts.unattributed} we cannot attribute to anyone.` : null,
+    counts.overYearIdle > 0 ? `${counts.overYearIdle} not used in over a year.` : null,
+    counts.irreversible > 0
+      ? `${counts.irreversible} ${counts.irreversible === 1 ? "is" : "are"} irreversible to revoke.`
+      : null,
+  ].filter((clause): clause is string => clause !== null);
+  return clauses.join(" ");
+}
+
 export function principalLabel(card: ApiCard): string {
   const ids = card.grant.principal.identifiers;
   if (ids.length === 0) return "Unknown principal";
@@ -30,7 +65,10 @@ export function formatWhen(iso: string | null | undefined): string {
   });
 }
 
-export function staleness(iso: string | null | undefined, now = new Date()): {
+export function staleness(
+  iso: string | null | undefined,
+  now = new Date(),
+): {
   label: string;
   level: "ok" | "cool" | "stale" | "critical" | "unknown";
   days: number | null;

@@ -2,22 +2,14 @@ import { AgentActivity } from "./components/AgentActivity.js";
 import { ApprovalQueue } from "./components/ApprovalQueue.js";
 import { ErrorBanner } from "./components/ErrorBanner.js";
 import { useScanSession } from "./hooks/useScanSession.js";
-import {
-  classifyClientError,
-  recoveryFor,
-  type ProductErrorKind,
-} from "./lib/errors.js";
+import { classifyClientError, recoveryFor, type ProductErrorKind } from "./lib/errors.js";
 
 export function App() {
   const session = useScanSession();
   const costs = session.activity.costs;
   const capped = session.activity.status === "cost_capped";
   const partial = session.activity.status === "partial";
-  const showBanner =
-    Boolean(session.error) ||
-    capped ||
-    partial ||
-    Boolean(session.activity.error);
+  const showBanner = Boolean(session.error) || capped || partial || Boolean(session.activity.error);
 
   const kind = (session.activity.errorKind ??
     (capped
@@ -37,17 +29,14 @@ export function App() {
         ? "Some connectors failed; results below are incomplete."
         : "");
 
-  const recovery =
-    session.activity.recovery ?? (kind ? recoveryFor(kind) : null);
+  const recovery = session.activity.recovery ?? (kind ? recoveryFor(kind) : null);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <header className="flex shrink-0 items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-panel)] px-5 py-3">
         <div className="flex items-baseline gap-3">
           <span className="text-[15px] font-semibold tracking-tight">Keyring</span>
-          <span className="text-[12px] text-[var(--color-faint)]">
-            Access governance
-          </span>
+          <span className="text-[12px] text-[var(--color-faint)]">Access governance</span>
         </div>
         <div className="font-mono text-[11px] text-[var(--color-faint)]">
           {session.activity.scanId
@@ -79,6 +68,7 @@ export function App() {
         />
         <ApprovalQueue
           cards={session.cards}
+          systemIds={Object.keys(session.activity.subagents)}
           scanId={session.activity.scanId}
           scanStatus={session.activity.status}
           onCardUpdated={session.updateCard}

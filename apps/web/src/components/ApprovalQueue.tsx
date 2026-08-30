@@ -2,18 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 
 import { postDecision } from "../api/client.js";
 import type { ApiCard } from "../api/types.js";
-import { isUnattributed, sortCards } from "../lib/format.js";
+import { countScanSummary, isUnattributed, scanSummaryText, sortCards } from "../lib/format.js";
 import { ApprovalCardView } from "./ApprovalCardView.js";
 import { ExecutePanel } from "./ExecutePanel.js";
 import { HoldDialog } from "./HoldDialog.js";
 
 export function ApprovalQueue({
   cards,
+  systemIds,
   scanId,
   scanStatus,
   onCardUpdated,
 }: {
   cards: ApiCard[];
+  systemIds: string[];
   scanId: string | null;
   scanStatus: string;
   onCardUpdated: (card: ApiCard) => void;
@@ -121,6 +123,7 @@ export function ApprovalQueue({
   const approved = ordered.filter((c) => c.status === "approved");
   const pendingCount = ordered.filter((c) => c.status === "pending").length;
   const heldCount = ordered.filter((c) => c.status === "held").length;
+  const summary = countScanSummary(cards, systemIds);
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-[var(--color-surface)]">
@@ -193,6 +196,37 @@ export function ApprovalQueue({
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        {scanStatus === "completed" ? (
+          <div
+            aria-label={scanSummaryText(summary)}
+            className="mx-auto mb-5 max-w-3xl border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3"
+          >
+            <p className="text-[13px] leading-relaxed text-[var(--color-ink-2)]">
+              <span className="font-semibold text-[var(--color-ink)]">
+                {summary.grants} grant{summary.grants === 1 ? "" : "s"} across {summary.systems}{" "}
+                system{summary.systems === 1 ? "" : "s"}.
+              </span>
+              {summary.unattributed > 0 ? (
+                <>
+                  {" "}
+                  <span className="font-semibold text-[var(--color-irrev)]">
+                    {summary.unattributed} we cannot attribute to anyone.
+                  </span>
+                </>
+              ) : null}
+              {summary.overYearIdle > 0 ? (
+                <> {summary.overYearIdle} not used in over a year.</>
+              ) : null}
+              {summary.irreversible > 0 ? (
+                <>
+                  {" "}
+                  {summary.irreversible} {summary.irreversible === 1 ? "is" : "are"} irreversible to
+                  revoke.
+                </>
+              ) : null}
+            </p>
+          </div>
+        ) : null}
         {ordered.length === 0 ? (
           <EmptyState scanStatus={scanStatus} />
         ) : (
