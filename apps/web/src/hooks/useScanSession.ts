@@ -39,7 +39,7 @@ type Action =
     }
   | { type: "card_updated"; card: ApiCard };
 
-const emptyActivity = (): AgentActivityState => ({
+export const emptyActivity = (): AgentActivityState => ({
   scanId: null,
   status: "idle",
   person: null,
@@ -162,7 +162,10 @@ function reduce(state: State, action: Action): State {
   }
 }
 
-function applyEvent(activity: AgentActivityState, event: ScanProgressEvent): AgentActivityState {
+export function applyEvent(
+  activity: AgentActivityState,
+  event: ScanProgressEvent,
+): AgentActivityState {
   const at = event.at ?? new Date().toISOString();
   switch (event.type) {
     case "scan.started":
@@ -249,11 +252,11 @@ function applyEvent(activity: AgentActivityState, event: ScanProgressEvent): Age
       const prev = activity.subagents[systemId];
       const displayName = String(event.displayName ?? prev?.displayName ?? systemId);
       const next = prev
-        ? { ...prev, status: "done" as const }
+        ? { ...prev, status: "failed" as const }
         : {
             systemId,
             displayName,
-            status: "done" as const,
+            status: "failed" as const,
             found: 0,
             startedAt: at,
           };
@@ -280,7 +283,10 @@ function applyEvent(activity: AgentActivityState, event: ScanProgressEvent): Age
           subagents: Object.fromEntries(
             Object.entries(activity.subagents).map(([systemId, subagent]) => [
               systemId,
-              { ...subagent, status: "reconciling" as const },
+              {
+                ...subagent,
+                status: subagent.status === "failed" ? "failed" : "reconciling",
+              },
             ]),
           ),
           sandbox: {
@@ -300,7 +306,10 @@ function applyEvent(activity: AgentActivityState, event: ScanProgressEvent): Age
           subagents: Object.fromEntries(
             Object.entries(activity.subagents).map(([systemId, subagent]) => [
               systemId,
-              { ...subagent, status: "done" as const },
+              {
+                ...subagent,
+                status: subagent.status === "failed" ? "failed" : "done",
+              },
             ]),
           ),
           sandbox: {

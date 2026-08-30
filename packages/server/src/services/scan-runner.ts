@@ -123,6 +123,7 @@ export async function startScan(
   });
   logger.info({ driver, person: body.person, recordingId }, "scan started");
 
+  let scanLedger: ScanCostLedger | undefined;
   void (async () => {
     try {
       if (driver === "replay") {
@@ -132,6 +133,7 @@ export async function startScan(
 
       if (driver === "trueforge" || body.recordWith === "trueforge") {
         const ledger = new ScanCostLedger();
+        scanLedger = ledger;
         const recorder = driver === "record" ? new ScanRecorder() : undefined;
         await driveTrueForgeAgent(db, scanId, body, logger, ledger, recorder);
         await runFixtureFanOutAndPersist(db, scanId, body, logger, {
@@ -146,6 +148,7 @@ export async function startScan(
 
       // fixture or record (fixture backend)
       const ledger = new ScanCostLedger();
+      scanLedger = ledger;
       const recorder = driver === "record" ? new ScanRecorder() : undefined;
       await runFixtureFanOutAndPersist(db, scanId, body, logger, {
         emitSubagents: true,
@@ -157,13 +160,13 @@ export async function startScan(
     } catch (err) {
       if (err instanceof CostCapExceededError) {
         logger.warn({ costUsd: err.costUsd }, "scan cost capped");
-        const costs = {
+        const costs = scanLedger?.snapshot() ?? {
           inputTokens: 0,
           outputTokens: 0,
           costUsd: err.costUsd,
           hardCapUsd: err.hardCapUsd,
           capped: true,
-          lines: [] as [],
+          lines: [],
         };
         const classified = classifyProductError(err, "cost_capped");
         await updateScanMetadata(db, scanId, {
@@ -245,12 +248,15 @@ async function runFixtureFanOutAndPersist(
   const delay = body.delayMsPerGrant ?? Number(process.env.KEYRING_SCAN_DELAY_MS ?? 0);
   const systems = await listConnectedSystems();
   const mergedIds: string[] = [];
-  const failedSystems: Array<{
+  type FailedSystem = {
     systemId: string;
     error: string;
     errorKind: string;
-  }> = [];
+  };
+  const failedSystemsById = new Map<string, FailedSystem>();
+  const successfulSystems = new Set<string>();
   const { ledger, recorder } = opts;
+  const fanOutController = new AbortController();
 
   if (opts.emitSubagents) {
     for (const system of systems) {
@@ -268,134 +274,145 @@ async function runFixtureFanOutAndPersist(
   }
 
   const grantsBySystem = new Map<string, string[]>();
-  await Promise.all(
-    systems.map(async (system) => {
+  const inventoryTasks = systems.map(async (system) => {
+    if (opts.emitSubagents) {
+      publish(
+        {
+          type: "subagent.started",
+          scanId,
+          systemId: system.id,
+          displayName: system.displayName,
+          at: new Date().toISOString(),
+        },
+        recorder,
+      );
+      log.info({ systemId: system.id }, "subagent started");
+    }
+
+    try {
+      // Mechanical inventory summarisation — cheap model role
+      const invModel = modelForRole("inventory");
+      const invIn = 800;
+      const invOut = 200;
+      try {
+        const snap = ledger.recordModelCall({
+          role: "inventory",
+          model: invModel,
+          inputTokens: invIn,
+          outputTokens: invOut,
+          note: `inventory_system:${system.id}`,
+        });
+        publishCost(scanId, snap, recorder);
+        recorder?.addModel({
+          at: new Date().toISOString(),
+          role: "inventory",
+          model: invModel,
+          inputTokens: invIn,
+          outputTokens: invOut,
+          costUsd: snap.lines.at(-1)?.costUsd ?? 0,
+          inputSummary: `Summarise inventory for ${system.id}`,
+          outputSummary: `compact grants for ${system.id}`,
+        });
+      } catch (err) {
+        if (err instanceof CostCapExceededError) {
+          publishCost(scanId, ledger.snapshot(), recorder);
+          throw err;
+        }
+        throw err;
+      }
+
+      if (opts.emitSubagents && opts.record) {
+        await pause(DEMO_SYSTEM_STAGGER_MS[system.id] ?? 200, fanOutController.signal);
+      }
+      const result = await inventorySystem(system.id, {
+        delayMsPerGrant: opts.emitSubagents ? delay : 0,
+        signal: fanOutController.signal,
+        onGrant: opts.emitSubagents
+          ? (found) => {
+              publish(
+                {
+                  type: "subagent.progress",
+                  scanId,
+                  systemId: system.id,
+                  found,
+                  at: new Date().toISOString(),
+                },
+                recorder,
+              );
+            }
+          : undefined,
+      });
+      grantsBySystem.set(
+        system.id,
+        result.grants.map((grant) => grant.id),
+      );
+      successfulSystems.add(system.id);
+
+      recorder?.addTool({
+        at: new Date().toISOString(),
+        tool: "inventory_system",
+        arguments: { system_id: system.id },
+        resultSummary: `${result.count} grants`,
+      });
+
       if (opts.emitSubagents) {
         publish(
           {
-            type: "subagent.started",
+            type: "subagent.done",
             scanId,
             systemId: system.id,
-            displayName: system.displayName,
+            found: result.count,
             at: new Date().toISOString(),
           },
           recorder,
         );
-        log.info({ systemId: system.id }, "subagent started");
+        log.info({ systemId: system.id, found: result.count }, "subagent done");
       }
-
-      try {
-        // Mechanical inventory summarisation — cheap model role
-        const invModel = modelForRole("inventory");
-        const invIn = 800;
-        const invOut = 200;
-        try {
-          const snap = ledger.recordModelCall({
-            role: "inventory",
-            model: invModel,
-            inputTokens: invIn,
-            outputTokens: invOut,
-            note: `inventory_system:${system.id}`,
-          });
-          publishCost(scanId, snap, recorder);
-          recorder?.addModel({
-            at: new Date().toISOString(),
-            role: "inventory",
-            model: invModel,
-            inputTokens: invIn,
-            outputTokens: invOut,
-            costUsd: snap.lines.at(-1)?.costUsd ?? 0,
-            inputSummary: `Summarise inventory for ${system.id}`,
-            outputSummary: `compact grants for ${system.id}`,
-          });
-        } catch (err) {
-          if (err instanceof CostCapExceededError) {
-            publishCost(scanId, ledger.snapshot(), recorder);
-            throw err;
-          }
-          throw err;
-        }
-
-        if (opts.emitSubagents && opts.record) {
-          await pause(DEMO_SYSTEM_STAGGER_MS[system.id] ?? 200);
-        }
-        const result = await inventorySystem(system.id, {
-          delayMsPerGrant: opts.emitSubagents ? delay : 0,
-          onGrant: opts.emitSubagents
-            ? (found) => {
-                publish(
-                  {
-                    type: "subagent.progress",
-                    scanId,
-                    systemId: system.id,
-                    found,
-                    at: new Date().toISOString(),
-                  },
-                  recorder,
-                );
-              }
-            : undefined,
-        });
-        grantsBySystem.set(
-          system.id,
-          result.grants.map((grant) => grant.id),
-        );
-
-        recorder?.addTool({
-          at: new Date().toISOString(),
-          tool: "inventory_system",
-          arguments: { system_id: system.id },
-          resultSummary: `${result.count} grants`,
-        });
-
-        if (opts.emitSubagents) {
-          publish(
-            {
-              type: "subagent.done",
-              scanId,
-              systemId: system.id,
-              found: result.count,
-              at: new Date().toISOString(),
-            },
-            recorder,
-          );
-          log.info({ systemId: system.id, found: result.count }, "subagent done");
-        }
-      } catch (err) {
-        if (err instanceof CostCapExceededError) throw err;
-        const classified = classifyProductError(err);
-        failedSystems.push({
+    } catch (err) {
+      if (err instanceof CostCapExceededError) throw err;
+      if (fanOutController.signal.aborted) throw err;
+      const classified = classifyProductError(err);
+      failedSystemsById.set(system.id, {
+        systemId: system.id,
+        error: classified.message,
+        errorKind: classified.kind,
+      });
+      publish(
+        {
+          type: "subagent.failed",
+          scanId,
           systemId: system.id,
+          displayName: system.displayName,
+          at: new Date().toISOString(),
           error: classified.message,
           errorKind: classified.kind,
-        });
-        publish(
-          {
-            type: "subagent.failed",
-            scanId,
-            systemId: system.id,
-            displayName: system.displayName,
-            at: new Date().toISOString(),
-            error: classified.message,
-            errorKind: classified.kind,
-            recovery: classified.recovery,
-          },
-          recorder,
-        );
-        log.warn(
-          { systemId: system.id, err, errorKind: classified.kind },
-          "subagent failed — continuing partial scan",
-        );
-      }
-    }),
-  );
+          recovery: classified.recovery,
+        },
+        recorder,
+      );
+      log.warn(
+        { systemId: system.id, err, errorKind: classified.kind },
+        "subagent failed — continuing partial scan",
+      );
+    }
+  });
+  try {
+    await Promise.all(inventoryTasks);
+  } catch (err) {
+    fanOutController.abort(err);
+    await Promise.allSettled(inventoryTasks);
+    throw err;
+  }
+  const failedSystems = systems
+    .map((system) => failedSystemsById.get(system.id))
+    .filter((failure): failure is NonNullable<typeof failure> => Boolean(failure));
   for (const system of systems) {
     for (const grantId of grantsBySystem.get(system.id) ?? []) {
       mergedIds.push(grantId);
     }
   }
 
-  if (failedSystems.length > 0 && mergedIds.length === 0) {
+  if (failedSystems.length > 0 && successfulSystems.size === 0) {
     const first = failedSystems[0]!;
     const err = new Error(`All connectors failed (first: ${first.systemId}: ${first.error})`);
     Object.assign(err, { status: first.errorKind === "rate_limit" ? 429 : 401 });
@@ -644,8 +661,14 @@ async function runReplay(
   log: FastifyBaseLogger,
 ): Promise<void> {
   const recording = await loadRecording(recordingId);
+  const replaySpeed = positiveNumberEnv("KEYRING_REPLAY_SPEED", 1);
+  const replayMaxGapMs = positiveNumberEnv("KEYRING_REPLAY_MAX_GAP_MS", 180);
   log.info(
-    { recordingId, interactions: recording.interactions.length },
+    {
+      recordingId,
+      interactions: recording.interactions.length,
+      replaySpeed,
+    },
     "replaying recording (zero API calls)",
   );
 
@@ -655,7 +678,7 @@ async function runReplay(
     const eventAt = Date.parse(event.at);
     if (previousEventAt !== null && Number.isFinite(eventAt)) {
       const recordedGap = Math.max(0, eventAt - previousEventAt);
-      await pause(Math.min(Math.max(recordedGap, 8), 180));
+      await pause(Math.min(Math.max(recordedGap * replaySpeed, 8), replayMaxGapMs));
     }
     const rewritten = { ...event, scanId } as ScanProgressEvent;
     scanBus.publish(rewritten);
@@ -881,8 +904,27 @@ async function driveTrueForgeAgent(
   }
 }
 
-function pause(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function pause(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason ?? new Error("aborted"));
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        reject(signal.reason ?? new Error("aborted"));
+      },
+      { once: true },
+    );
+  });
+}
+
+function positiveNumberEnv(name: string, fallback: number): number {
+  const value = Number(process.env[name] ?? fallback);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
 function serializeCardForRecording(card: {

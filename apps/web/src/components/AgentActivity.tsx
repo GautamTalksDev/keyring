@@ -85,7 +85,9 @@ export function AgentActivity({
                             ? "text-[var(--color-ink)]"
                             : s.status === "queued"
                               ? "text-[var(--color-faint)]"
-                              : "text-[var(--color-ok)]"
+                              : s.status === "failed"
+                                ? "text-[var(--color-irrev)]"
+                                : "text-[var(--color-ok)]"
                         }`}
                       >
                         {s.status === "queued"
@@ -94,7 +96,9 @@ export function AgentActivity({
                             ? "Scanning"
                             : s.status === "reconciling"
                               ? "Reconciling"
-                              : "Done"}
+                              : s.status === "failed"
+                                ? "Failed"
+                                : "Done"}
                       </div>
                       <div className="font-mono text-[12px] text-[var(--color-mute)]">
                         {s.found} found

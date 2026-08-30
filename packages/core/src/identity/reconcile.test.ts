@@ -9,10 +9,7 @@ import { usernameNameSimilarity } from "./similarity.js";
 import { reconcileIdentities } from "./reconcile.js";
 import type { DirectoryEntry } from "./types.js";
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../../..",
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 
 async function loadFixtureInput() {
   const grantsDoc = JSON.parse(
@@ -41,15 +38,11 @@ async function loadFixtureInput() {
 
 describe("usernameNameSimilarity", () => {
   it("matches schen-dev to Sarah Chen (probable-tier score)", () => {
-    expect(usernameNameSimilarity("schen-dev", "Sarah Chen")).toBeGreaterThanOrEqual(
-      0.72,
-    );
+    expect(usernameNameSimilarity("schen-dev", "Sarah Chen")).toBeGreaterThanOrEqual(0.72);
   });
 
   it("does not match opaque handles to unrelated names", () => {
-    expect(usernameNameSimilarity("analyticalengine", "Ada Lovelace")).toBeLessThan(
-      0.72,
-    );
+    expect(usernameNameSimilarity("analyticalengine", "Ada Lovelace")).toBeLessThan(0.72);
     expect(usernameNameSimilarity("cobol-compiler", "Grace Hopper")).toBeLessThan(0.72);
   });
 });
@@ -78,15 +71,11 @@ describe("reconcileIdentities — fixture test org", () => {
     ).toBe(true);
     expect(
       ada.identifiers.some(
-        (i) =>
-          i.kind === "personal_email" &&
-          i.value === "ada.numbers.personal@gmail.com",
+        (i) => i.kind === "personal_email" && i.value === "ada.numbers.personal@gmail.com",
       ),
     ).toBe(true);
     expect(
-      ada.identifiers.some(
-        (i) => i.kind === "username" && i.value === "analyticalengine",
-      ),
+      ada.identifiers.some((i) => i.kind === "username" && i.value === "analyticalengine"),
     ).toBe(true);
 
     // Genuinely unattributable: AWS unlabeled key + CI trap deploy key (and any other orphans)
@@ -100,9 +89,32 @@ describe("reconcileIdentities — fixture test org", () => {
 
     // Every grant is either clustered or unknown — no silent drops
     const total =
-      result.clusters.reduce((n, c) => n + c.grantIds.length, 0) +
-      result.unknown.grantIds.length;
+      result.clusters.reduce((n, c) => n + c.grantIds.length, 0) + result.unknown.grantIds.length;
     expect(total).toBe(input.grants.length);
+  });
+
+  it("does not duplicate human grants into a service-account resource cluster", async () => {
+    const input = await loadFixtureInput();
+    const result = runReconciliationFromJson({
+      ...input,
+      serviceAccounts: [
+        {
+          id: "ci-payments-cdn",
+          displayName: "GitHub Actions — payments CDN publish",
+          owner: "platform@keyring-test.example",
+          keyIds: ["AKIA_KEYRING_CI_ORPHAN_LOOKALIKE"],
+          resourceIds: ["keyring-test/payments"],
+        },
+      ],
+    });
+
+    const ada = result.clusters.find((c) => c.displayName === "Ada Lovelace")!;
+    const ci = result.clusters.find(
+      (c) => c.displayName === "GitHub Actions — payments CDN publish",
+    )!;
+    expect(ada.grantIds).toHaveLength(5);
+    expect(ci.grantIds).toHaveLength(1);
+    expect(ada.grantIds.filter((id) => ci.grantIds.includes(id))).toHaveLength(0);
   });
 });
 
@@ -172,9 +184,7 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: true,
               method: "kick",
             },
-            evidence: [
-              { claim: "member", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "member", source: "test", confidence: "certain" }],
           }),
           createGrant({
             system: "slack",
@@ -196,9 +206,7 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: true,
               method: "kick",
             },
-            evidence: [
-              { claim: "member", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "member", source: "test", confidence: "certain" }],
           }),
         ];
 
@@ -210,9 +218,7 @@ describe("reconcileIdentities — adversarial table", () => {
         expect(connor.grantIds).toHaveLength(1);
         expect(
           result.unknown.grantIds.includes(
-            grants.find((g) =>
-              g.principal.identifiers.some((i) => i.value === "sarah"),
-            )!.id,
+            grants.find((g) => g.principal.identifiers.some((i) => i.value === "sarah"))!.id,
           ),
         ).toBe(true);
       },
@@ -252,9 +258,7 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: true,
               method: "drive.permissions.delete",
             },
-            evidence: [
-              { claim: "acl", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "acl", source: "test", confidence: "certain" }],
           }),
           createGrant({
             system: "google_workspace",
@@ -280,9 +284,7 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: true,
               method: "drive.permissions.delete",
             },
-            evidence: [
-              { claim: "external share", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "external share", source: "test", confidence: "certain" }],
           }),
           createGrant({
             system: "google_workspace",
@@ -308,9 +310,7 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: true,
               method: "drive.permissions.delete",
             },
-            evidence: [
-              { claim: "external share", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "external share", source: "test", confidence: "certain" }],
           }),
           createGrant({
             system: "github",
@@ -337,9 +337,7 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: true,
               method: "remove_collaborator",
             },
-            evidence: [
-              { claim: "collab", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "collab", source: "test", confidence: "certain" }],
           }),
         ];
 
@@ -417,9 +415,7 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: true,
               method: "drive.permissions.delete",
             },
-            evidence: [
-              { claim: "acl", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "acl", source: "test", confidence: "certain" }],
           }),
         ];
 
@@ -464,17 +460,13 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: true,
               method: "drive.permissions.delete",
             },
-            evidence: [
-              { claim: "acl", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "acl", source: "test", confidence: "certain" }],
           }),
           createGrant({
             system: "aws",
             principal: {
               kind: "unknown",
-              identifiers: [
-                { kind: "key_id", value: "AKIA_ADA_LAPTOP", source: "aws" },
-              ],
+              identifiers: [{ kind: "key_id", value: "AKIA_ADA_LAPTOP", source: "aws" }],
             },
             resource: {
               id: "arn:aws:iam::1:user/ada",
@@ -488,9 +480,7 @@ describe("reconcileIdentities — adversarial table", () => {
               reversible: false,
               method: "iam:DeleteAccessKey",
             },
-            evidence: [
-              { claim: "key", source: "test", confidence: "certain" },
-            ],
+            evidence: [{ claim: "key", source: "test", confidence: "certain" }],
           }),
         ];
 
