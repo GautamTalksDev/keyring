@@ -40,6 +40,55 @@ type Action =
     }
   | { type: "card_updated"; card: ApiCard };
 
+export interface ScanStartCoordinator {
+  begin(): number;
+  canCommit(token: number): boolean;
+  commit(token: number, scanId: string, unsubscribe: () => void): boolean;
+  cancel(): void;
+  readonly activeScanId: string | null;
+  readonly hasSubscription: boolean;
+}
+
+export function createScanStartCoordinator(): ScanStartCoordinator {
+  let latestToken = 0;
+  let activeScanId: string | null = null;
+  let unsubscribe: (() => void) | null = null;
+
+  return {
+    begin() {
+      latestToken += 1;
+      unsubscribe?.();
+      unsubscribe = null;
+      activeScanId = null;
+      return latestToken;
+    },
+    canCommit(token) {
+      return token === latestToken;
+    },
+    commit(token, scanId, nextUnsubscribe) {
+      if (token !== latestToken) {
+        nextUnsubscribe();
+        return false;
+      }
+      activeScanId = scanId;
+      unsubscribe = nextUnsubscribe;
+      return true;
+    },
+    cancel() {
+      latestToken += 1;
+      unsubscribe?.();
+      unsubscribe = null;
+      activeScanId = null;
+    },
+    get activeScanId() {
+      return activeScanId;
+    },
+    get hasSubscription() {
+      return unsubscribe !== null;
+    },
+  };
+}
+
 export const emptyActivity = (): AgentActivityState => ({
   scanId: null,
   status: "idle",
@@ -462,17 +511,19 @@ export function useScanSession() {
     loading: false,
     error: null,
   });
-  const unsubRef = useRef<(() => void) | null>(null);
-  const activeScanIdRef = useRef<string | null>(null);
+  const scanStartCoordinatorRef = useRef<ScanStartCoordinator | null>(null);
   const refreshAbortRef = useRef<AbortController | null>(null);
+  if (scanStartCoordinatorRef.current === null) {
+    scanStartCoordinatorRef.current = createScanStartCoordinator();
+  }
+  const scanStartCoordinator = scanStartCoordinatorRef.current;
 
   useEffect(() => {
     return () => {
-      unsubRef.current?.();
+      scanStartCoordinator.cancel();
       refreshAbortRef.current?.abort();
-      activeScanIdRef.current = null;
     };
-  }, []);
+  }, [scanStartCoordinator]);
 
   async function refreshCards(scanId: string) {
     refreshAbortRef.current?.abort();
@@ -480,7 +531,9 @@ export function useScanSession() {
     refreshAbortRef.current = controller;
     try {
       const res = await fetchCards(scanId, controller.signal);
-      if (activeScanIdRef.current !== scanId || controller.signal.aborted) return;
+      if (scanStartCoordinator.activeScanId !== scanId || controller.signal.aborted) {
+        return;
+      }
       dispatch({
         type: "cards",
         scanId,
@@ -491,7 +544,7 @@ export function useScanSession() {
         recordingId: (res.recordingId as string | null) ?? null,
       });
     } catch (err) {
-      if (!controller.signal.aborted && activeScanIdRef.current === scanId) {
+      if (!controller.signal.aborted && scanStartCoordinator.activeScanId === scanId) {
         throw err;
       }
     } finally {
@@ -502,14 +555,13 @@ export function useScanSession() {
   }
 
   async function beginScan(person: string) {
-    unsubRef.current?.();
-    unsubRef.current = null;
+    const startToken = scanStartCoordinator.begin();
     refreshAbortRef.current?.abort();
     refreshAbortRef.current = null;
-    activeScanIdRef.current = null;
     dispatch({ type: "scan_starting", person });
     try {
       const started = await startScan({ person });
+      if (!scanStartCoordinator.canCommit(startToken)) return;
       dispatch({
         type: "scan_started",
         scanId: started.scanId,
@@ -517,8 +569,7 @@ export function useScanSession() {
         driver: started.driver,
         recordingId: started.recordingId ?? null,
       });
-      activeScanIdRef.current = started.scanId;
-      unsubRef.current = subscribeScanStream(started.scanId, {
+      const unsubscribe = subscribeScanStream(started.scanId, {
         onEvent: (event) => {
           dispatch({ type: "event", event });
           if (
@@ -533,9 +584,13 @@ export function useScanSession() {
           }
         },
       });
+      if (!scanStartCoordinator.commit(startToken, started.scanId, unsubscribe)) {
+        return;
+      }
       // Initial poll in case events already finished
       void refreshCards(started.scanId);
     } catch (err) {
+      if (!scanStartCoordinator.canCommit(startToken)) return;
       dispatch({
         type: "scan_error",
         error: err instanceof Error ? err.message : String(err),

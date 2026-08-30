@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiCard } from "../api/types.js";
-import { applyEvent, emptyActivity, reduce, type ScanSessionState } from "./useScanSession.js";
+import {
+  applyEvent,
+  createScanStartCoordinator,
+  emptyActivity,
+  reduce,
+  type ScanSessionState,
+} from "./useScanSession.js";
 
 const event = (type: string, systemId?: string) => ({
   type,
@@ -81,5 +87,67 @@ describe("scan session activity reducer", () => {
     const lateStaleResult = reduce(currentResult, staleRefresh);
     expect(lateStaleResult.cards).toEqual([newCard]);
     expect(lateStaleResult.activity.status).toBe("completed");
+  });
+
+  it("lets only the latest scan start own the SSE subscription and queue", () => {
+    const coordinator = createScanStartCoordinator();
+    const existingUnsubscribe = { called: false };
+    const existingToken = coordinator.begin();
+    expect(
+      coordinator.commit(existingToken, "scan-0", () => {
+        existingUnsubscribe.called = true;
+      }),
+    ).toBe(true);
+
+    const firstToken = coordinator.begin();
+    const secondToken = coordinator.begin();
+    const secondUnsubscribe = { called: false };
+    expect(
+      coordinator.commit(secondToken, "scan-2", () => {
+        secondUnsubscribe.called = true;
+      }),
+    ).toBe(true);
+    expect(existingUnsubscribe.called).toBe(true);
+    expect(coordinator.activeScanId).toBe("scan-2");
+    expect(coordinator.hasSubscription).toBe(true);
+
+    const staleUnsubscribe = { called: false };
+    expect(
+      coordinator.commit(firstToken, "scan-1", () => {
+        staleUnsubscribe.called = true;
+      }),
+    ).toBe(false);
+    expect(staleUnsubscribe.called).toBe(true);
+    expect(coordinator.activeScanId).toBe("scan-2");
+    expect(secondUnsubscribe.called).toBe(false);
+
+    let state: ScanSessionState = {
+      activity: emptyActivity(),
+      cards: [],
+      loading: false,
+      error: null,
+    };
+    state = reduce(state, { type: "scan_starting", person: "Ada Lovelace" });
+    state = reduce(state, {
+      type: "scan_started",
+      scanId: "scan-1",
+      person: "Ada Lovelace",
+    });
+    state = reduce(state, { type: "scan_starting", person: "Grace Hopper" });
+    state = reduce(state, {
+      type: "scan_started",
+      scanId: "scan-2",
+      person: "Grace Hopper",
+    });
+    state = reduce(state, {
+      type: "cards",
+      scanId: "scan-1",
+      cards: [{ id: "stale" } as ApiCard],
+      status: "completed",
+    });
+
+    expect(state.activity.scanId).toBe("scan-2");
+    expect(state.cards).toEqual([]);
+    expect(state.activity.status).toBe("running");
   });
 });
