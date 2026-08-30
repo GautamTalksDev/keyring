@@ -9,7 +9,7 @@ import type {
 } from "../api/types.js";
 import { classifyClientError, recoveryFor } from "../lib/errors.js";
 
-type State = {
+export type ScanSessionState = {
   activity: AgentActivityState;
   cards: ApiCard[];
   loading: boolean;
@@ -31,6 +31,7 @@ type Action =
   | { type: "event"; event: ScanProgressEvent }
   | {
       type: "cards";
+      scanId: string;
       cards: ApiCard[];
       status: string;
       costs?: AgentActivityState["costs"];
@@ -38,6 +39,55 @@ type Action =
       recordingId?: string | null;
     }
   | { type: "card_updated"; card: ApiCard };
+
+export interface ScanStartCoordinator {
+  begin(): number;
+  canCommit(token: number): boolean;
+  commit(token: number, scanId: string, unsubscribe: () => void): boolean;
+  cancel(): void;
+  readonly activeScanId: string | null;
+  readonly hasSubscription: boolean;
+}
+
+export function createScanStartCoordinator(): ScanStartCoordinator {
+  let latestToken = 0;
+  let activeScanId: string | null = null;
+  let unsubscribe: (() => void) | null = null;
+
+  return {
+    begin() {
+      latestToken += 1;
+      unsubscribe?.();
+      unsubscribe = null;
+      activeScanId = null;
+      return latestToken;
+    },
+    canCommit(token) {
+      return token === latestToken;
+    },
+    commit(token, scanId, nextUnsubscribe) {
+      if (token !== latestToken) {
+        nextUnsubscribe();
+        return false;
+      }
+      activeScanId = scanId;
+      unsubscribe = nextUnsubscribe;
+      return true;
+    },
+    cancel() {
+      latestToken += 1;
+      unsubscribe?.();
+      unsubscribe = null;
+      activeScanId = null;
+    },
+    get activeScanId() {
+      return activeScanId;
+    },
+    get hasSubscription() {
+      return unsubscribe !== null;
+    },
+  };
+}
 
 export const emptyActivity = (): AgentActivityState => ({
   scanId: null,
@@ -67,7 +117,7 @@ function pushLog(
   };
 }
 
-function reduce(state: State, action: Action): State {
+export function reduce(state: ScanSessionState, action: Action): ScanSessionState {
   switch (action.type) {
     case "reset":
       return { activity: emptyActivity(), cards: [], loading: false, error: null };
@@ -130,6 +180,7 @@ function reduce(state: State, action: Action): State {
       };
     }
     case "cards":
+      if (state.activity.scanId !== action.scanId) return state;
       return {
         ...state,
         cards: action.cards,
@@ -460,29 +511,57 @@ export function useScanSession() {
     loading: false,
     error: null,
   });
-  const unsubRef = useRef<(() => void) | null>(null);
+  const scanStartCoordinatorRef = useRef<ScanStartCoordinator | null>(null);
+  const refreshAbortRef = useRef<AbortController | null>(null);
+  if (scanStartCoordinatorRef.current === null) {
+    scanStartCoordinatorRef.current = createScanStartCoordinator();
+  }
+  const scanStartCoordinator = scanStartCoordinatorRef.current;
 
   useEffect(() => {
-    return () => unsubRef.current?.();
-  }, []);
+    return () => {
+      scanStartCoordinator.cancel();
+      refreshAbortRef.current?.abort();
+    };
+  }, [scanStartCoordinator]);
 
   async function refreshCards(scanId: string) {
-    const res = await fetchCards(scanId);
-    dispatch({
-      type: "cards",
-      cards: res.cards,
-      status: res.status,
-      costs: res.costs ?? null,
-      driver: (res.driver as string | null) ?? null,
-      recordingId: (res.recordingId as string | null) ?? null,
-    });
+    refreshAbortRef.current?.abort();
+    const controller = new AbortController();
+    refreshAbortRef.current = controller;
+    try {
+      const res = await fetchCards(scanId, controller.signal);
+      if (scanStartCoordinator.activeScanId !== scanId || controller.signal.aborted) {
+        return;
+      }
+      dispatch({
+        type: "cards",
+        scanId,
+        cards: res.cards,
+        status: res.status,
+        costs: res.costs ?? null,
+        driver: (res.driver as string | null) ?? null,
+        recordingId: (res.recordingId as string | null) ?? null,
+      });
+    } catch (err) {
+      if (!controller.signal.aborted && scanStartCoordinator.activeScanId === scanId) {
+        throw err;
+      }
+    } finally {
+      if (refreshAbortRef.current === controller) {
+        refreshAbortRef.current = null;
+      }
+    }
   }
 
   async function beginScan(person: string) {
-    unsubRef.current?.();
+    const startToken = scanStartCoordinator.begin();
+    refreshAbortRef.current?.abort();
+    refreshAbortRef.current = null;
     dispatch({ type: "scan_starting", person });
     try {
       const started = await startScan({ person });
+      if (!scanStartCoordinator.canCommit(startToken)) return;
       dispatch({
         type: "scan_started",
         scanId: started.scanId,
@@ -490,7 +569,7 @@ export function useScanSession() {
         driver: started.driver,
         recordingId: started.recordingId ?? null,
       });
-      unsubRef.current = subscribeScanStream(started.scanId, {
+      const unsubscribe = subscribeScanStream(started.scanId, {
         onEvent: (event) => {
           dispatch({ type: "event", event });
           if (
@@ -505,9 +584,13 @@ export function useScanSession() {
           }
         },
       });
+      if (!scanStartCoordinator.commit(startToken, started.scanId, unsubscribe)) {
+        return;
+      }
       // Initial poll in case events already finished
       void refreshCards(started.scanId);
     } catch (err) {
+      if (!scanStartCoordinator.canCommit(startToken)) return;
       dispatch({
         type: "scan_error",
         error: err instanceof Error ? err.message : String(err),
