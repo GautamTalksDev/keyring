@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import type { ApiCard } from "../api/types.js";
-import { isUnattributed, sortCards, staleness } from "../lib/format.js";
+import {
+  countScanSummary,
+  isUnattributed,
+  scanSummaryText,
+  sortCards,
+  staleness,
+} from "../lib/format.js";
 
 function card(partial: Partial<ApiCard> & Pick<ApiCard, "id">): ApiCard {
   return {
@@ -61,5 +67,43 @@ describe("format helpers", () => {
 
   it("flags missing lastUsedAt as unknown staleness", () => {
     expect(staleness(null).level).toBe("unknown");
+  });
+
+  it("counts summary findings from cards and connected systems", () => {
+    const counts = countScanSummary(
+      [
+        card({ id: "unknown", attribution: { confidence: "speculative", reasoning: "unknown" } }),
+        card({
+          id: "old",
+          irreversible: true,
+          grant: {
+            ...card({ id: "old-base" }).grant,
+            lastUsedAt: "2024-01-01T00:00:00.000Z",
+          },
+        }),
+      ],
+      ["github", "slack", "aws"],
+      new Date("2026-06-01T00:00:00.000Z"),
+    );
+
+    expect(counts).toEqual({
+      grants: 2,
+      systems: 3,
+      unattributed: 1,
+      overYearIdle: 1,
+      irreversible: 1,
+    });
+    expect(scanSummaryText(counts)).toBe(
+      "2 grants across 3 systems. 1 we cannot attribute to anyone. 1 not used in over a year. 1 is irreversible to revoke.",
+    );
+  });
+
+  it("omits zero-category clauses from the headline", () => {
+    const counts = countScanSummary([card({ id: "one" })], ["github"]);
+
+    expect(counts.unattributed).toBe(0);
+    expect(counts.overYearIdle).toBe(0);
+    expect(counts.irreversible).toBe(0);
+    expect(scanSummaryText(counts)).toBe("1 grant across 1 system.");
   });
 });

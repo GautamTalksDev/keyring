@@ -102,6 +102,8 @@ async function main(): Promise<void> {
   process.env.KEYRING_PGLITE_PATH = pglitePath;
   process.env.KEYRING_SCAN_DRIVER = "replay";
   process.env.KEYRING_EXECUTE_DRY_RUN = "1";
+  process.env.KEYRING_REPLAY_SPEED = process.env.KEYRING_REPLAY_SPEED ?? "20";
+  process.env.KEYRING_REPLAY_MAX_GAP_MS = process.env.KEYRING_REPLAY_MAX_GAP_MS ?? "5000";
   // Clear DATABASE_URL so demo never requires Docker Postgres
   delete process.env.DATABASE_URL;
 
@@ -154,8 +156,6 @@ async function main(): Promise<void> {
         VITE_SCAN_DRIVER: "replay",
         VITE_API_BASE_URL: "",
         VITE_API_PORT: String(apiPort),
-        KEYRING_REPLAY_SPEED: process.env.KEYRING_REPLAY_SPEED ?? "20",
-        KEYRING_REPLAY_MAX_GAP_MS: process.env.KEYRING_REPLAY_MAX_GAP_MS ?? "5000",
       },
       stdio: ["ignore", "pipe", "pipe"],
     },
