@@ -1,0 +1,32 @@
+[
+  {
+    "when": { "owner": "keyring-test", "repo": "payments" },
+    "response": [
+      {
+        "id": 101,
+        "login": "pull-invite",
+        "permissions": { "pull": true }
+      }
+    ]
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "infra" },
+    "response": [
+      {
+        "id": 102,
+        "login": "push-invite",
+        "permissions": { "pull": true, "push": true }
+      }
+    ]
+  },
+  {
+    "when": { "owner": "keyring-test", "repo": "crypto-notes" },
+    "response": [
+      {
+        "id": 103,
+        "login": "admin-invite",
+        "permissions": { "pull": true, "push": true, "admin": true }
+      }
+    ]
+  }
+]

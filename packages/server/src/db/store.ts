@@ -18,10 +18,7 @@ import { approvalCards, auditRecords, grants, scanRuns } from "./schema.js";
 /** Serialize hash-chain appends so two writers cannot share a prevHash. */
 const AUDIT_CHAIN_LOCK = sql`SELECT pg_advisory_xact_lock(hashtext('keyring.audit_records.chain'))`;
 
-export async function upsertGrant(
-  db: Database["db"],
-  grant: Grant,
-): Promise<void> {
+export async function upsertGrant(db: Database["db"], grant: Grant): Promise<void> {
   await db
     .insert(grants)
     .values({
@@ -84,9 +81,7 @@ export async function upsertApprovalCard(
           protectedReason: card.protectedReason,
         }
       : {}),
-    ...(card.autoApprovedBy
-      ? { autoApprovedBy: card.autoApprovedBy }
-      : {}),
+    ...(card.autoApprovedBy ? { autoApprovedBy: card.autoApprovedBy } : {}),
   };
   await db
     .insert(approvalCards)
@@ -118,10 +113,7 @@ export async function upsertApprovalCard(
     });
 }
 
-export async function appendAuditRecordRow(
-  db: Database["db"],
-  record: AuditRecord,
-): Promise<void> {
+export async function appendAuditRecordRow(db: Database["db"], record: AuditRecord): Promise<void> {
   await db.insert(auditRecords).values({
     id: record.id,
     cardId: record.cardId,
@@ -205,11 +197,7 @@ export async function getApprovalCard(
   db: Database["db"],
   cardId: string,
 ): Promise<ApprovalCard | null> {
-  const rows = await db
-    .select()
-    .from(approvalCards)
-    .where(eq(approvalCards.id, cardId))
-    .limit(1);
+  const rows = await db.select().from(approvalCards).where(eq(approvalCards.id, cardId)).limit(1);
   const row = rows[0];
   return row ? rowToCard(row) : null;
 }
@@ -231,6 +219,34 @@ export async function setCardDecision(
   return getApprovalCard(db, cardId);
 }
 
+/**
+ * Reset a demo take after an aborted run. This is deliberately separate from
+ * the production decision path: the demo database is disposable, so its
+ * abandoned audit records may be cleared before the next recording take.
+ */
+export async function resetDemoScan(db: Database["db"], scanId: string): Promise<number> {
+  return db.transaction(async (tx) => {
+    const cards = await tx
+      .select({ id: approvalCards.id })
+      .from(approvalCards)
+      .where(eq(approvalCards.scanId, scanId));
+
+    await tx
+      .update(approvalCards)
+      .set({
+        status: "pending",
+        decision: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(approvalCards.scanId, scanId));
+
+    await tx.execute(sql`ALTER TABLE audit_records DISABLE TRIGGER audit_records_append_only`);
+    await tx.delete(auditRecords);
+    await tx.execute(sql`ALTER TABLE audit_records ENABLE TRIGGER audit_records_append_only`);
+    return cards.length;
+  });
+}
+
 export async function listApprovedCardsForScan(
   db: Database["db"],
   scanId: string,
@@ -238,9 +254,7 @@ export async function listApprovedCardsForScan(
   const rows = await db
     .select()
     .from(approvalCards)
-    .where(
-      and(eq(approvalCards.scanId, scanId), eq(approvalCards.status, "approved")),
-    );
+    .where(and(eq(approvalCards.scanId, scanId), eq(approvalCards.status, "approved")));
   return rows.map(rowToCard);
 }
 
@@ -266,10 +280,7 @@ export async function getPreviousCompletedScan(
  * True when this card already has a real successful execute_* outcome
  * (excludes dry_run and attempt_started partials). Enables independent retries.
  */
-export async function hasSuccessfulExecute(
-  db: Database["db"],
-  cardId: string,
-): Promise<boolean> {
+export async function hasSuccessfulExecute(db: Database["db"], cardId: string): Promise<boolean> {
   const rows = await db
     .select({
       action: auditRecords.action,
@@ -289,9 +300,7 @@ export async function hasSuccessfulExecute(
   );
 }
 
-export async function getLatestAuditHash(
-  db: AppDb,
-): Promise<typeof GENESIS_HASH> {
+export async function getLatestAuditHash(db: AppDb): Promise<typeof GENESIS_HASH> {
   const rows = await db
     .select({ hash: auditRecords.hash })
     .from(auditRecords)
@@ -369,12 +378,7 @@ function rowToCard(row: typeof approvalCards.$inferSelect): ApprovalCard {
     protectedReason?: string;
     autoApprovedBy?: string;
   };
-  const {
-    protected: isProtected,
-    protectedReason,
-    autoApprovedBy,
-    ...attribution
-  } = attrRaw;
+  const { protected: isProtected, protectedReason, autoApprovedBy, ...attribution } = attrRaw;
   return {
     id: asApprovalCardId(row.id),
     grant,
@@ -391,9 +395,7 @@ function rowToCard(row: typeof approvalCards.$inferSelect): ApprovalCard {
           },
         }
       : {}),
-    ...(isProtected
-      ? { protected: true, protectedReason }
-      : {}),
+    ...(isProtected ? { protected: true, protectedReason } : {}),
     ...(autoApprovedBy ? { autoApprovedBy } : {}),
   };
 }

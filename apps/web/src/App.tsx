@@ -18,6 +18,7 @@ export function App() {
     beginScan: session.beginScan,
     updateCard: session.updateCard,
     cancelScan: session.cancelScan,
+    resetDemoScan: session.resetDemoScan,
   });
   const costs = session.activity.costs;
   const capped = session.activity.status === "cost_capped";

@@ -9,6 +9,7 @@ import {
   listAuditChain,
   listAuditRecords,
   listCardsForScan,
+  resetDemoScan,
   setCardDecision,
   verifyStoredAuditChain,
 } from "../db/store.js";
@@ -48,10 +49,7 @@ function writeSse(reply: FastifyReply, event: string, data: unknown): void {
   reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
-export function registerApiRoutes(
-  app: FastifyInstance,
-  opts: { db: Database["db"] },
-): void {
+export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db"] }): void {
   const { db } = opts;
 
   app.post("/scans", async (req, reply) => {
@@ -212,25 +210,16 @@ export function registerApiRoutes(
       return reply.code(404).send({ error: "card_not_found" });
     }
 
-    if (
-      body.bulk === true &&
-      body.decision === "approve" &&
-      card.protected === true
-    ) {
+    if (body.bulk === true && body.decision === "approve" && card.protected === true) {
       return reply.code(403).send({
         error: "protected_no_bulk",
         message:
-          card.protectedReason ??
-          "Protected by keyring.yml — approve individually, never in bulk.",
+          card.protectedReason ?? "Protected by keyring.yml — approve individually, never in bulk.",
       });
     }
 
     const status: ApprovalStatus =
-      body.decision === "approve"
-        ? "approved"
-        : body.decision === "hold"
-          ? "held"
-          : "rejected";
+      body.decision === "approve" ? "approved" : body.decision === "hold" ? "held" : "rejected";
 
     const decision: Decision = {
       by: body.by,
@@ -257,9 +246,30 @@ export function registerApiRoutes(
 
     return {
       card: updated ? serializeCard(updated) : null,
-      message:
-        "Decision recorded. Call POST /scans/:id/execute to apply approved actions.",
+      message: "Decision recorded. Call POST /scans/:id/execute to apply approved actions.",
     };
+  });
+
+  app.post("/scans/:id/demo-reset", async (req, reply) => {
+    if (process.env.KEYRING_DEMO !== "1") {
+      return reply.code(404).send({ error: "not_found" });
+    }
+
+    let params;
+    try {
+      params = scanIdParamSchema.parse(req.params);
+    } catch (err) {
+      if (err instanceof ZodError) return zodError(reply, err);
+      throw err;
+    }
+
+    const scan = await getScanRun(db, params.id);
+    if (!scan) {
+      return reply.code(404).send({ error: "scan_not_found" });
+    }
+
+    const reset = await resetDemoScan(db, params.id);
+    return { scanId: params.id, reset };
   });
 
   app.post("/scans/:id/execute", async (req, reply) => {
@@ -343,12 +353,10 @@ export function registerApiRoutes(
 
     const chain = await listAuditChain(db, { cardId: query.cardId });
     const verification = await verifyStoredAuditChain(db);
-    const secret =
-      process.env.KEYRING_EXPORT_SECRET ?? "keyring-dev-export-secret";
+    const secret = process.env.KEYRING_EXPORT_SECRET ?? "keyring-dev-export-secret";
 
     if (query.format === "csv") {
-      const header =
-        "id,cardId,action,approvedBy,approvedAt,executedAt,result,error,prevHash,hash";
+      const header = "id,cardId,action,approvedBy,approvedAt,executedAt,result,error,prevHash,hash";
       const lines = chain.map((r) =>
         [
           r.id,
@@ -371,10 +379,7 @@ export function registerApiRoutes(
       reply.header("x-keyring-signature", signature);
       reply.header("x-keyring-signature-alg", algorithm);
       reply.header("x-keyring-content-sha256", contentHash(body));
-      reply.header(
-        "x-keyring-chain-ok",
-        verification.ok ? "true" : "false",
-      );
+      reply.header("x-keyring-chain-ok", verification.ok ? "true" : "false");
       return reply.send(body);
     }
 

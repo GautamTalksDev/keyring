@@ -80,10 +80,22 @@ export async function postDecision(
     by?: string;
     bulk?: boolean;
   },
+  signal?: AbortSignal,
 ): Promise<{ card: ApiCard; message: string }> {
   return request(`/cards/${cardId}/decision`, {
     method: "POST",
     body: JSON.stringify({ by: "operator", ...body }),
+    signal,
+  });
+}
+
+export async function resetDemoScan(
+  scanId: string,
+  signal?: AbortSignal,
+): Promise<{ scanId: string; reset: number }> {
+  return request(`/scans/${scanId}/demo-reset`, {
+    method: "POST",
+    signal,
   });
 }
 

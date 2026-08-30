@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef } from "react";
 
-import { fetchCards, startScan, subscribeScanStream } from "../api/client.js";
+import { fetchCards, resetDemoScan, startScan, subscribeScanStream } from "../api/client.js";
 import type {
   AgentActivityState,
   ApiCard,
@@ -622,5 +622,6 @@ export function useScanSession() {
     updateCard,
     dismissError,
     cancelScan,
+    resetDemoScan,
   };
 }

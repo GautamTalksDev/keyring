@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { createGitHubConnector } from "./github/connector.js";
 import { createFixtureMcpToolCaller } from "./mcp/fixture-caller.js";
+import { McpToolError, type McpToolCaller } from "./mcp/types.js";
 import type { InventoryContext } from "./types.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -18,6 +19,21 @@ async function loadFixtureGithubGrants() {
 }
 
 describe("GitHubConnector contract (MCP fixtures)", () => {
+  async function inventory(mcp: McpToolCaller = createFixtureMcpToolCaller()) {
+    const connector = createGitHubConnector({
+      org: "keyring-test",
+      discoveredAt: DISCOVERED_AT,
+    });
+    const grants = [];
+    for await (const grant of connector.inventory({
+      credentials: { kind: "read", token: "t" },
+      mcp,
+    })) {
+      grants.push(grant);
+    }
+    return grants;
+  }
+
   it("inventories repos, collaborators, commit emails, and deploy keys via MCP", async () => {
     const connector = createGitHubConnector({
       org: "keyring-test",
@@ -65,6 +81,61 @@ describe("GitHubConnector contract (MCP fixtures)", () => {
     expect(trap).toBeDefined();
     expect(trap!.resource.id).toBe("keyring-test/payments");
     expect(trap!.capability).toBe("admin");
+  });
+
+  it("maps pending invitation pull, push, and admin permissions correctly", async () => {
+    const invitations = (await inventory()).filter(
+      (grant) => grant.accessState === "pending_invitation",
+    );
+
+    expect(
+      invitations.map((grant) => [grant.principal.identifiers[0]?.value, grant.capability]),
+    ).toEqual(
+      expect.arrayContaining([
+        ["pull-invite", "read"],
+        ["push-invite", "write"],
+        ["admin-invite", "admin"],
+      ]),
+    );
+  });
+
+  it("swallows only an unavailable invitation tool", async () => {
+    const delegate = createFixtureMcpToolCaller();
+    const mcp: McpToolCaller = {
+      async callTool(request) {
+        if (request.tool === "list_repository_invitations") {
+          throw new McpToolError("tool list_repository_invitations not found", {
+            server: request.server,
+            tool: request.tool,
+            status: 404,
+          });
+        }
+        return delegate.callTool(request);
+      },
+    };
+
+    await expect(inventory(mcp)).resolves.toEqual(expect.any(Array));
+  });
+
+  it("surfaces invitation authentication failures for a partial scan", async () => {
+    const delegate = createFixtureMcpToolCaller();
+    const mcp: McpToolCaller = {
+      async callTool(request) {
+        if (request.tool === "list_repository_invitations") {
+          throw new McpToolError("GitHub token is not authorized", {
+            server: request.server,
+            tool: request.tool,
+            status: 401,
+          });
+        }
+        return delegate.callTool(request);
+      },
+    };
+
+    await expect(inventory(mcp)).rejects.toMatchObject({
+      name: "McpToolError",
+      status: 401,
+    });
   });
 
   it("covers every GitHub grant resource from the test-org fixtures", async () => {

@@ -41,6 +41,14 @@ function configuredMinRuntime(): number {
   return Number.isFinite(value) && value >= 0 ? value : DEFAULT_MIN_RUNTIME_MS;
 }
 
+export function isTerminalScanStatus(status: AgentActivityState["status"]): boolean {
+  return status !== "idle" && status !== "running";
+}
+
+export function isCurrentGuidedRun(runId: number, currentRunId: number, aborted: boolean): boolean {
+  return runId === currentRunId && !aborted;
+}
+
 function wait(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
@@ -103,12 +111,14 @@ export function useGuidedDemo({
   beginScan,
   updateCard,
   cancelScan,
+  resetDemoScan,
 }: {
   activity: AgentActivityState;
   cards: ApiCard[];
   beginScan: (person: string) => Promise<string | null>;
   updateCard: (card: ApiCard) => void;
   cancelScan: () => void;
+  resetDemoScan: (scanId: string) => Promise<unknown>;
 }) {
   const [state, setState] = useState<GuidedDemoState>(initialState);
   const activityRef = useRef(activity);
@@ -116,23 +126,44 @@ export function useGuidedDemo({
   const runIdRef = useRef(0);
   const controllerRef = useRef<AbortController | null>(null);
   const gateResolverRef = useRef<(() => void) | null>(null);
+  const pendingDecisionsRef = useRef(new Set<Promise<unknown>>());
+  const committedDecisionIdsRef = useRef(new Set<string>());
+  const resetPromiseRef = useRef<Promise<void> | null>(null);
 
   activityRef.current = activity;
   cardsRef.current = cards;
 
   const stop = useCallback(() => {
+    const scanId = activityRef.current.scanId;
     runIdRef.current += 1;
     controllerRef.current?.abort();
     controllerRef.current = null;
     gateResolverRef.current?.();
     gateResolverRef.current = null;
     cancelScan();
+    if (
+      scanId &&
+      (pendingDecisionsRef.current.size > 0 || committedDecisionIdsRef.current.size > 0)
+    ) {
+      const resetPromise = Promise.allSettled([...pendingDecisionsRef.current])
+        .then(() => resetDemoScan(scanId))
+        .then(() => undefined);
+      resetPromiseRef.current = resetPromise;
+      void resetPromise
+        .catch(() => undefined)
+        .finally(() => {
+          if (resetPromiseRef.current === resetPromise) {
+            resetPromiseRef.current = null;
+          }
+        });
+      committedDecisionIdsRef.current.clear();
+    }
     setState((previous) => ({
       ...previous,
       phase: "stopped",
       message: "Guided demo stopped. Start it again for another take.",
     }));
-  }, [cancelScan]);
+  }, [cancelScan, resetDemoScan]);
 
   useEffect(() => {
     return () => {
@@ -158,6 +189,8 @@ export function useGuidedDemo({
       return;
     }
 
+    await resetPromiseRef.current?.catch(() => undefined);
+    committedDecisionIdsRef.current.clear();
     const runId = runIdRef.current + 1;
     runIdRef.current = runId;
     const controller = new AbortController();
@@ -166,7 +199,7 @@ export function useGuidedDemo({
     let pausedAt: number | null = null;
     let pausedMs = 0;
 
-    const current = () => runIdRef.current === runId && !controller.signal.aborted;
+    const current = () => isCurrentGuidedRun(runId, runIdRef.current, controller.signal.aborted);
     const update = (patch: Partial<GuidedDemoState>) => {
       if (current()) setState((previous) => ({ ...previous, ...patch }));
     };
@@ -187,10 +220,7 @@ export function useGuidedDemo({
 
       await waitFor(
         () =>
-          activityRef.current.scanId === scanId &&
-          (activityRef.current.status === "completed" ||
-            activityRef.current.status === "partial" ||
-            activityRef.current.status === "failed"),
+          activityRef.current.scanId === scanId && isTerminalScanStatus(activityRef.current.status),
         controller.signal,
       );
       if (activityRef.current.status !== "completed") {
@@ -217,6 +247,27 @@ export function useGuidedDemo({
         throw new Error("The guided demo requires a protected CI card.");
       }
 
+      const decide = async (
+        cardId: string,
+        body: {
+          decision: "approve" | "hold" | "reject";
+          note?: string;
+          by?: string;
+        },
+      ) => {
+        const request = postDecision(cardId, body, controller.signal);
+        pendingDecisionsRef.current.add(request);
+        try {
+          const result = await request;
+          if (!current()) return null;
+          committedDecisionIdsRef.current.add(cardId);
+          updateCard(result.card);
+          return result;
+        } finally {
+          pendingDecisionsRef.current.delete(request);
+        }
+      };
+
       for (let index = 0; index < safeCards.length; index += 1) {
         const card = safeCards[index]!;
         update({
@@ -224,11 +275,11 @@ export function useGuidedDemo({
           targetCardId: card.id,
           message: `Approving safe card ${index + 1} of ${safeCards.length}…`,
         });
-        const result = await postDecision(card.id, {
+        const result = await decide(card.id, {
           decision: "approve",
           by: "guided-demo",
         });
-        updateCard(result.card);
+        if (!result) return;
         if (index < safeCards.length - 1) {
           await wait(DECISION_GAP_MS, controller.signal);
         }
@@ -261,12 +312,12 @@ export function useGuidedDemo({
         phase: "holding",
         message: "Recording the human decision: belongs to CI, flag the owner.",
       });
-      const held = await postDecision(ciCard.id, {
+      const held = await decide(ciCard.id, {
         decision: "hold",
         note: "belongs to CI, flag the owner",
         by: "guided-demo",
       });
-      updateCard(held.card);
+      if (!held) return;
       await wait(HOLD_CONFIRMATION_MS, controller.signal);
 
       update({

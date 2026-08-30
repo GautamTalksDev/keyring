@@ -37,6 +37,35 @@ function evidenceSource(server: string, tool: string): string {
   return `mcp:${server}/${tool}`;
 }
 
+function isTrue(value: unknown): boolean {
+  return value === true || value === "true";
+}
+
+function invitationPermission(invitation: Record<string, unknown>): string {
+  const explicit = invitation.role_name ?? invitation.permission;
+  if (explicit !== undefined && explicit !== null && String(explicit)) {
+    return String(explicit);
+  }
+
+  const permissions = asObject(invitation.permissions);
+  for (const permission of ["admin", "maintain", "push", "triage", "pull"]) {
+    if (isTrue(permissions[permission])) return permission;
+  }
+  return "pull";
+}
+
+function isUnavailableInvitationTool(error: unknown): boolean {
+  if (!(error instanceof McpToolError)) return false;
+  if (error.tool !== GitHubMcpTools.listRepositoryInvitations) return false;
+  if (error.status !== 404) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("no mcp fixture") ||
+    /(?:tool|method|operation|endpoint).*(?:not found|not available|unsupported)/.test(message) ||
+    message.includes("tool is not configured")
+  );
+}
+
 /**
  * GitHub inventory via TrueForge-configured GitHub MCP tools — never Octokit.
  */
@@ -327,11 +356,7 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
                 ? [{ kind: "personal_email", value: email, source: "github" }]
                 : [];
             if (identifiers.length === 0) continue;
-            const permission = String(
-              invitation.role_name ??
-                invitation.permission ??
-                (asObject(invitation.permissions).admin ? "admin" : "pull"),
-            );
+            const permission = invitationPermission(invitation);
             yield createGrant({
               system: "github",
               principal: { kind: "human", identifiers },
@@ -365,7 +390,7 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
           // The shipped GitHub MCP may not expose invitations yet. Keep the
           // existing collaborator inventory usable when this optional tool is
           // unavailable.
-          if (!(error instanceof McpToolError)) throw error;
+          if (!isUnavailableInvitationTool(error)) throw error;
         }
 
         // --- Deploy keys (optional tool) ---
