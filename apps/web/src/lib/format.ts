@@ -7,6 +7,7 @@ export interface ScanSummaryCounts {
   systems: number;
   humanIdentities: number;
   agentIdentities: number;
+  unregisteredAgents: number;
   unattributed: number;
   overYearIdle: number;
   irreversible: number;
@@ -31,11 +32,21 @@ export function countScanSummary(
             ?.value ?? principalLabel(card),
       ),
   ).size;
+  const unregisteredAgents = new Set(
+    cards
+      .filter(isUnregisteredAgent)
+      .map(
+        (card) =>
+          card.grant.principal.identifiers.find((identifier) => identifier.kind === "agent_id")
+            ?.value ?? principalLabel(card),
+      ),
+  ).size;
   return {
     grants: cards.length,
     systems: new Set(systemIds).size,
     humanIdentities,
     agentIdentities,
+    unregisteredAgents,
     unattributed: cards.filter(isUnattributed).length,
     overYearIdle: cards.filter((card) => staleness(card.grant.lastUsedAt, now).level === "critical")
       .length,
@@ -47,6 +58,9 @@ export function scanSummaryText(counts: ScanSummaryCounts): string {
   const clauses = [
     `${counts.grants} grant${counts.grants === 1 ? "" : "s"} across ${counts.systems} system${counts.systems === 1 ? "" : "s"}.`,
     `${counts.humanIdentities} human identit${counts.humanIdentities === 1 ? "y" : "ies"} and ${counts.agentIdentities} AI agent identit${counts.agentIdentities === 1 ? "y" : "ies"}.`,
+    counts.unregisteredAgents > 0
+      ? `${counts.unregisteredAgents} unregistered agent${counts.unregisteredAgents === 1 ? "" : "s"}.`
+      : null,
     counts.unattributed > 0 ? `${counts.unattributed} we cannot attribute to anyone.` : null,
     counts.overYearIdle > 0 ? `${counts.overYearIdle} not used in over a year.` : null,
     counts.irreversible > 0
@@ -74,6 +88,13 @@ export function isUnattributed(card: ApiCard): boolean {
   // Once reconcile/policy sets resolvedTo, the card is attributed —
   // even if the raw grant principal.kind is still "unknown" (CI keys).
   return card.attribution.resolvedTo === undefined;
+}
+
+export function isUnregisteredAgent(card: ApiCard): boolean {
+  return (
+    card.grant.principal.kind === "ai_agent" &&
+    card.grant.principal.declarationStatus === "unregistered"
+  );
 }
 
 export function formatWhen(iso: string | null | undefined): string {
@@ -149,4 +170,29 @@ export function sortCards(cards: ApiCard[]): ApiCard[] {
     if (ua !== ub) return ua - ub;
     return b.risk.score - a.risk.score;
   });
+}
+
+export interface QueueSections {
+  unattributed: ApiCard[];
+  agents: ApiCard[];
+  attributed: ApiCard[];
+  visualOrder: ApiCard[];
+}
+
+/** Section order the queue renders: unattributed, agents, attributed. */
+export function queueSections(cards: ApiCard[]): QueueSections {
+  const ordered = sortCards(cards);
+  const unattributed = ordered.filter(
+    (card) => card.grant.principal.kind !== "ai_agent" && isUnattributed(card),
+  );
+  const agents = ordered.filter((card) => card.grant.principal.kind === "ai_agent");
+  const attributed = ordered.filter(
+    (card) => card.grant.principal.kind !== "ai_agent" && !isUnattributed(card),
+  );
+  return {
+    unattributed,
+    agents,
+    attributed,
+    visualOrder: [...unattributed, ...agents, ...attributed],
+  };
 }

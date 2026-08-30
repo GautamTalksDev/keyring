@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { postDecision } from "../api/client.js";
 import type { ApiCard } from "../api/types.js";
-import { countScanSummary, isUnattributed, scanSummaryText, sortCards } from "../lib/format.js";
+import { countScanSummary, queueSections, scanSummaryText } from "../lib/format.js";
 import { ApprovalCardView } from "./ApprovalCardView.js";
 import { ExecutePanel } from "./ExecutePanel.js";
 import { HoldDialog } from "./HoldDialog.js";
@@ -46,9 +46,12 @@ export function ApprovalQueue({
   guidedMode?: boolean;
   guidedCardId?: string | null;
 }) {
-  const ordered = useMemo(() => sortCards(cards), [cards]);
-  const unattributed = ordered.filter(isUnattributed);
-  const attributed = ordered.filter((c) => !isUnattributed(c));
+  const {
+    unattributed,
+    agents,
+    attributed,
+    visualOrder: ordered,
+  } = useMemo(() => queueSections(cards), [cards]);
 
   const [focusIndex, setFocusIndex] = useState(0);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -335,6 +338,42 @@ export function ApprovalQueue({
               </div>
             ) : null}
 
+            {agents.length > 0 ? (
+              <div>
+                <SectionHeading
+                  title="AI agents"
+                  subtitle="Non-human identities found in connected systems, including Keyring self-inventory."
+                  tone="agent"
+                  count={agents.length}
+                />
+                <div className="mt-3 space-y-2" role="list">
+                  {agents.map((card) => (
+                    <ApprovalCardView
+                      key={card.id}
+                      card={card}
+                      selected={checked.has(card.id)}
+                      focused={focused?.id === card.id}
+                      checked={checked.has(card.id)}
+                      onFocus={() =>
+                        setFocusIndex(
+                          Math.max(
+                            0,
+                            focusable.findIndex((c) => c.id === card.id),
+                          ),
+                        )
+                      }
+                      onToggleCheck={() => toggleCheck(card.id)}
+                      onApprove={() => void decide(card, "approve")}
+                      onHold={() => setHoldTarget(card)}
+                      onReject={() => void decide(card, "reject")}
+                      actionsDisabled={guidedMode}
+                      guidedFocus={guidedCardId === card.id}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
             {attributed.length > 0 ? (
               <div>
                 <SectionHeading
@@ -408,7 +447,7 @@ function SectionHeading({
   title: string;
   subtitle: string;
   count: number;
-  tone?: "warn";
+  tone?: "warn" | "agent";
 }) {
   return (
     <div className="flex items-end justify-between gap-4 border-b border-[var(--color-line)] pb-2">
@@ -416,7 +455,7 @@ function SectionHeading({
         <h3
           className={`text-[13px] font-semibold tracking-tight ${
             tone === "warn" ? "text-[var(--color-irrev)]" : "text-[var(--color-ink)]"
-          }`}
+          } ${tone === "agent" ? "text-[var(--color-hold)]" : ""}`}
         >
           {title}
         </h3>

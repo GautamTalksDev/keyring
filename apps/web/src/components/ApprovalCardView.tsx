@@ -5,6 +5,7 @@ import {
   actionVerb,
   confidenceLabel,
   formatWhen,
+  isUnregisteredAgent,
   principalLabel,
   staleness,
   systemLabel,
@@ -38,6 +39,7 @@ export function ApprovalCardView({
   const stale = staleness(card.grant.lastUsedAt);
   const pending = card.status === "pending";
   const who = principalLabel(card);
+  const unregisteredAgent = isUnregisteredAgent(card);
 
   return (
     <article
@@ -52,7 +54,7 @@ export function ApprovalCardView({
           : "border-[var(--color-line)]"
       } ${selected ? "bg-[var(--color-surface-2)]" : ""} ${
         guidedFocus ? "ring-2 ring-[var(--color-ink)] ring-offset-2" : ""
-      }`}
+      } ${unregisteredAgent ? "border-[var(--color-irrev)] bg-[var(--color-irrev-soft)]" : ""}`}
     >
       <div className="flex items-start gap-3 px-3.5 py-3">
         <label className="mt-0.5 shrink-0 cursor-pointer" onClick={(e) => e.stopPropagation()}>
@@ -75,14 +77,21 @@ export function ApprovalCardView({
                 {card.grant.principal.kind === "ai_agent" ? (
                   <span
                     className={`border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] ${
-                      card.grant.principal.declarationStatus === "unregistered"
+                      unregisteredAgent
                         ? "border-[var(--color-irrev)] bg-[var(--color-irrev-soft)] text-[var(--color-irrev)]"
                         : "border-[var(--color-hold)] text-[var(--color-hold)]"
                     }`}
                   >
-                    {card.grant.principal.declarationStatus === "unregistered"
-                      ? "Unregistered agent"
-                      : "AI agent"}
+                    {unregisteredAgent ? "Unregistered agent" : "AI agent"}
+                  </span>
+                ) : null}
+                {card.grant.principal.kind === "ai_agent" &&
+                (card.grant.principal.agentName === "Keyring" ||
+                  card.grant.evidence.some(
+                    (evidence) => evidence.source === "keyring:self-inventory",
+                  )) ? (
+                  <span className="border border-[var(--color-ink)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-ink)]">
+                    Self-inventory
                   </span>
                 ) : null}
                 {card.irreversible ? (
@@ -176,17 +185,31 @@ export function ApprovalCardView({
             />
           </div>
 
-          <p className="mt-2.5 text-[12px] leading-relaxed text-[var(--color-ink-2)]">
-            {card.attribution.reasoning}
-          </p>
+          <details className="mt-2.5 border-t border-[var(--color-line)] pt-2 text-[12px]">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[var(--color-ink-2)] [&::-webkit-details-marker]:hidden">
+              <span className="min-w-0 truncate">{inferenceConclusion(card, who)}</span>
+              <span className="shrink-0 text-[var(--color-faint)]">▸ show inference chain</span>
+            </summary>
+            <p className="mt-2 leading-relaxed text-[var(--color-mute)]">
+              {card.attribution.reasoning}
+            </p>
+          </details>
 
-          <ul className="mt-2 space-y-0.5 border-t border-[var(--color-line)] pt-2">
-            {card.risk.reasons.map((r) => (
-              <li key={r} className="font-mono text-[11px] leading-snug text-[var(--color-mute)]">
-                {r}
-              </li>
-            ))}
-          </ul>
+          <details className="mt-2 border-t border-[var(--color-line)] pt-2 text-[12px]">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[var(--color-mute)] [&::-webkit-details-marker]:hidden">
+              <span className="min-w-0 truncate">
+                Top risk factor: {topRiskReason(card.risk.reasons)}
+              </span>
+              <span className="shrink-0 text-[var(--color-faint)]">▸ show risk breakdown</span>
+            </summary>
+            <ul className="mt-2 space-y-0.5">
+              {card.risk.reasons.map((r) => (
+                <li key={r} className="font-mono text-[11px] leading-snug text-[var(--color-mute)]">
+                  {r}
+                </li>
+              ))}
+            </ul>
+          </details>
 
           {pending && !actionsDisabled ? (
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -204,6 +227,29 @@ export function ApprovalCardView({
         </div>
       </div>
     </article>
+  );
+}
+
+function inferenceConclusion(card: ApiCard, who: string): string {
+  const chain = card.attribution.reasoning.split("Inference chain:")[1]?.trim();
+  const firstSignal = chain
+    ?.split(" → ")[0]
+    ?.replace(/^\([^)]+\)\s*/, "")
+    .split(":")[0]
+    ?.trim();
+  return `${card.attribution.resolvedTo ? `Attributed to ${who}` : "Unattributed"} · ${
+    card.attribution.confidence
+  } · ${firstSignal || "no matching inference"}`;
+}
+
+function topRiskReason(reasons: string[]): string {
+  return (
+    reasons.reduce<string | null>((top, reason) => {
+      if (!top) return reason;
+      const score = Number(reason.match(/\(\+(\d+)\)$/)?.[1] ?? 0);
+      const topScore = Number(top.match(/\(\+(\d+)\)$/)?.[1] ?? 0);
+      return score > topScore ? reason : top;
+    }, null) ?? "no risk factors recorded"
   );
 }
 
