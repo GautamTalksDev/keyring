@@ -20,6 +20,17 @@ Approve / Hold (note required) / Reject. Bulk select + bulk approve/reject — *
 ## Execute
 
 Separate step: summary of approved actions, Restorable vs Permanent callouts, **dry-run on by default**, explicit confirm, then per-card results (including undo hints when restorable). Approving never executes.
+
+## Guided demo
+
+The replay demo exposes **Run guided demo**. It starts a real replay scan, waits on
+the five-system SSE activity, approves safe cards individually, then pauses on the
+protected CI card. **Continue** records the human hold with the note
+`belongs to CI, flag the owner`, executes approved cards through the API, and ends
+on the verified audit ledger. **Stop** aborts the guided controller and resets the
+take; running it again creates a fresh scan. The controls are not rendered outside
+demo/replay mode.
+
 ## Run
 
 ```bash

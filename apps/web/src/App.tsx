@@ -1,11 +1,25 @@
 import { AgentActivity } from "./components/AgentActivity.js";
 import { ApprovalQueue } from "./components/ApprovalQueue.js";
 import { ErrorBanner } from "./components/ErrorBanner.js";
+import { GuidedDemoPanel } from "./components/GuidedDemoPanel.js";
 import { useScanSession } from "./hooks/useScanSession.js";
+import { useGuidedDemo } from "./hooks/useGuidedDemo.js";
 import { classifyClientError, recoveryFor, type ProductErrorKind } from "./lib/errors.js";
 
 export function App() {
   const session = useScanSession();
+  const demoMode =
+    import.meta.env.VITE_DEMO_MODE === "1" ||
+    import.meta.env.VITE_SCAN_DRIVER === "replay" ||
+    session.activity.driver === "replay";
+  const guided = useGuidedDemo({
+    activity: session.activity,
+    cards: session.cards,
+    beginScan: session.beginScan,
+    updateCard: session.updateCard,
+    cancelScan: session.cancelScan,
+    resetDemoScan: session.resetDemoScan,
+  });
   const costs = session.activity.costs;
   const capped = session.activity.status === "cost_capped";
   const partial = session.activity.status === "partial";
@@ -44,6 +58,15 @@ export function App() {
             : "no active scan"}
           {session.activity.driver ? ` · ${session.activity.driver}` : ""}
         </div>
+        {demoMode && !guided.active ? (
+          <button
+            type="button"
+            onClick={() => void guided.run()}
+            className="border border-[var(--color-ink)] bg-[var(--color-ink)] px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-[var(--color-ink-2)]"
+          >
+            Run guided demo
+          </button>
+        ) : null}
       </header>
 
       {showBanner && message ? (
@@ -72,8 +95,19 @@ export function App() {
           scanId={session.activity.scanId}
           scanStatus={session.activity.status}
           onCardUpdated={session.updateCard}
+          guidedMode={demoMode && guided.state.phase !== "idle"}
+          guidedCardId={guided.state.targetCardId}
         />
       </div>
+
+      {demoMode && guided.state.phase !== "idle" ? (
+        <GuidedDemoPanel
+          state={guided.state}
+          cards={session.cards}
+          onContinue={guided.continueGate}
+          onStop={guided.stop}
+        />
+      ) : null}
 
       <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] bg-[var(--color-panel)] px-5 py-2 font-mono text-[11px] text-[var(--color-mute)]">
         <div className="flex flex-wrap gap-x-4 gap-y-1">

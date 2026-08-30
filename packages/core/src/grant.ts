@@ -8,25 +8,11 @@ import {
   type ResourceId,
   type SystemId,
 } from "./brand.js";
-import {
-  requireNonEmptyEvidence,
-  type Evidence,
-  type NonEmptyEvidence,
-} from "./evidence.js";
+import { requireNonEmptyEvidence, type Evidence, type NonEmptyEvidence } from "./evidence.js";
 import { sha256Hex } from "./hash.js";
-import {
-  identifierSortKey,
-  normalizeIdentifier,
-  type Identifier,
-} from "./identifier.js";
+import { identifierSortKey, normalizeIdentifier, type Identifier } from "./identifier.js";
 
-export type System =
-  | "google_workspace"
-  | "github"
-  | "slack"
-  | "aws"
-  | "notion"
-  | "custom";
+export type System = "google_workspace" | "github" | "slack" | "aws" | "notion" | "custom";
 
 export type PrincipalKind = "human" | "service_account" | "unknown";
 
@@ -36,14 +22,7 @@ export type Principal =
   | { kind: "unknown"; identifiers: Identifier[] };
 
 export type ResourceKind =
-  | "repo"
-  | "drive_folder"
-  | "iam_role"
-  | "channel"
-  | "database"
-  | "bucket"
-  | "page"
-  | "other";
+  "repo" | "drive_folder" | "iam_role" | "channel" | "database" | "bucket" | "page" | "other";
 
 export interface Resource {
   id: ResourceId;
@@ -52,6 +31,8 @@ export interface Resource {
 }
 
 export type Capability = "read" | "write" | "admin" | "owner";
+
+export type GrantAccessState = "active" | "pending_invitation";
 
 export interface Revocable {
   possible: boolean;
@@ -69,6 +50,8 @@ export interface Grant {
   principal: Principal;
   resource: Resource;
   capability: Capability;
+  /** Whether access is active or awaiting acceptance of an invitation. */
+  accessState?: GrantAccessState;
   createdAt?: Date;
   lastUsedAt?: Date;
   discoveredAt: Date;
@@ -127,6 +110,7 @@ export interface CreateGrantInput {
   principal: Principal;
   resource: Omit<Resource, "id"> & { id: string };
   capability: Capability;
+  accessState?: GrantAccessState;
   createdAt?: Date;
   lastUsedAt?: Date;
   discoveredAt: Date;
@@ -154,6 +138,7 @@ export function createGrant(input: CreateGrantInput): Grant {
     principal,
     resource,
     capability: input.capability,
+    ...(input.accessState !== undefined ? { accessState: input.accessState } : {}),
     ...(input.createdAt !== undefined ? { createdAt: input.createdAt } : {}),
     ...(input.lastUsedAt !== undefined ? { lastUsedAt: input.lastUsedAt } : {}),
     discoveredAt: input.discoveredAt,

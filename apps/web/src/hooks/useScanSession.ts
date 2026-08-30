@@ -1,6 +1,6 @@
 import { useEffect, useReducer, useRef } from "react";
 
-import { fetchCards, startScan, subscribeScanStream } from "../api/client.js";
+import { fetchCards, resetDemoScan, startScan, subscribeScanStream } from "../api/client.js";
 import type {
   AgentActivityState,
   ApiCard,
@@ -554,14 +554,14 @@ export function useScanSession() {
     }
   }
 
-  async function beginScan(person: string) {
+  async function beginScan(person: string): Promise<string | null> {
     const startToken = scanStartCoordinator.begin();
     refreshAbortRef.current?.abort();
     refreshAbortRef.current = null;
     dispatch({ type: "scan_starting", person });
     try {
       const started = await startScan({ person });
-      if (!scanStartCoordinator.canCommit(startToken)) return;
+      if (!scanStartCoordinator.canCommit(startToken)) return null;
       dispatch({
         type: "scan_started",
         scanId: started.scanId,
@@ -585,16 +585,18 @@ export function useScanSession() {
         },
       });
       if (!scanStartCoordinator.commit(startToken, started.scanId, unsubscribe)) {
-        return;
+        return null;
       }
       // Initial poll in case events already finished
       void refreshCards(started.scanId);
+      return started.scanId;
     } catch (err) {
-      if (!scanStartCoordinator.canCommit(startToken)) return;
+      if (!scanStartCoordinator.canCommit(startToken)) return null;
       dispatch({
         type: "scan_error",
         error: err instanceof Error ? err.message : String(err),
       });
+      return null;
     }
   }
 
@@ -606,11 +608,20 @@ export function useScanSession() {
     dispatch({ type: "dismiss_error" });
   }
 
+  function cancelScan() {
+    scanStartCoordinator.cancel();
+    refreshAbortRef.current?.abort();
+    refreshAbortRef.current = null;
+    dispatch({ type: "reset" });
+  }
+
   return {
     ...state,
     beginScan,
     refreshCards,
     updateCard,
     dismissError,
+    cancelScan,
+    resetDemoScan,
   };
 }

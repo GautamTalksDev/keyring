@@ -19,8 +19,7 @@ function requiredLiveEnv(): {
     githubToken: process.env.GITHUB_TOKEN || process.env.KEYRING_GITHUB_TOKEN,
     githubOrg: process.env.GITHUB_ORG || process.env.KEYRING_GITHUB_ORG,
     slackToken: process.env.SLACK_BOT_TOKEN || process.env.KEYRING_SLACK_BOT_TOKEN,
-    googleAccessToken:
-      process.env.GOOGLE_ACCESS_TOKEN || process.env.KEYRING_GOOGLE_ACCESS_TOKEN,
+    googleAccessToken: process.env.GOOGLE_ACCESS_TOKEN || process.env.KEYRING_GOOGLE_ACCESS_TOKEN,
   };
 }
 
@@ -39,6 +38,36 @@ async function githubFetch(
       ...(init.headers ?? {}),
     },
   });
+}
+
+async function githubPendingInvitationIds(
+  token: string,
+  org: string,
+  repo: string,
+  user: string,
+): Promise<{ ids: string[]; error?: string }> {
+  const res = await githubFetch(token, `/repos/${org}/${repo}/invitations`);
+  if (!res.ok) {
+    return { ids: [], error: `${res.status} ${await res.text()}` };
+  }
+  const body = (await res.json()) as unknown;
+  if (!Array.isArray(body)) return { ids: [] };
+  const ids = body
+    .filter(
+      (entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null,
+    )
+    .filter((entry) => {
+      const invitee = entry.invitee;
+      return (
+        typeof invitee === "object" &&
+        invitee !== null &&
+        (invitee as { login?: unknown }).login === user
+      );
+    })
+    .map((entry) => entry.id)
+    .filter((id): id is string | number => typeof id === "string" || typeof id === "number")
+    .map(String);
+  return { ids };
 }
 
 /**
@@ -90,16 +119,16 @@ async function seedGitHub(
   ];
 
   for (const c of collabs) {
-    const res = await githubFetch(
-      token,
-      `/repos/${org}/${c.repo}/collaborators/${c.user}`,
-      {
-        method: "PUT",
-        body: JSON.stringify({ permission: c.permission }),
-      },
-    );
-    // 201 invited, 204 already collaborator, 404 user missing
-    if (res.status === 201 || res.status === 204) {
+    const res = await githubFetch(token, `/repos/${org}/${c.repo}/collaborators/${c.user}`, {
+      method: "PUT",
+      body: JSON.stringify({ permission: c.permission }),
+    });
+    // 201 creates an invitation; it does not grant access until accepted.
+    if (res.status === 201) {
+      lines.push(
+        `github: pending invitation for ${c.user} on ${org}/${c.repo} (${c.permission}) [201; not a collaborator]`,
+      );
+    } else if (res.status === 204) {
       lines.push(
         `github: ensured collaborator ${c.user} on ${org}/${c.repo} (${c.permission}) [${res.status}]`,
       );
@@ -115,7 +144,11 @@ async function seedGitHub(
   );
 }
 
-async function seedSlack(token: string, people: readonly TestPerson[], lines: string[]): Promise<void> {
+async function seedSlack(
+  token: string,
+  people: readonly TestPerson[],
+  lines: string[],
+): Promise<void> {
   // Slack Web API: auth.test proves the token; channel invites need real channel IDs.
   const auth = await fetch("https://slack.com/api/auth.test", {
     headers: { Authorization: `Bearer ${token}` },
@@ -131,7 +164,11 @@ async function seedSlack(token: string, people: readonly TestPerson[], lines: st
   );
 }
 
-async function seedGoogle(accessToken: string, people: readonly TestPerson[], lines: string[]): Promise<void> {
+async function seedGoogle(
+  accessToken: string,
+  people: readonly TestPerson[],
+  lines: string[],
+): Promise<void> {
   const about = await fetch("https://www.googleapis.com/drive/v3/about?fields=user", {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -184,13 +221,35 @@ export async function teardownLiveSystems(people: readonly TestPerson[]): Promis
       { user: people[2]!.githubUsername, repo: "crypto-notes" },
     ];
     for (const r of removals) {
-      const res = await githubFetch(
-        token,
-        `/repos/${org}/${r.repo}/collaborators/${r.user}`,
-        { method: "DELETE" },
-      );
+      const pending = await githubPendingInvitationIds(token, org, r.repo, r.user);
+      if (pending.error) {
+        lines.push(
+          `github: invitation lookup ${r.user} on ${org}/${r.repo} failed: ${pending.error}`,
+        );
+      }
+      for (const invitationId of pending.ids) {
+        const invitation = await githubFetch(
+          token,
+          `/repos/${org}/${r.repo}/invitations/${invitationId}`,
+          { method: "DELETE" },
+        );
+        if (invitation.status === 204 || invitation.status === 404) {
+          lines.push(
+            `github: removed/absent pending invitation ${invitationId} for ${r.user} on ${org}/${r.repo} [${invitation.status}]`,
+          );
+        } else {
+          lines.push(
+            `github: remove invitation ${invitationId} for ${r.user}: ${invitation.status} ${await invitation.text()}`,
+          );
+        }
+      }
+      const res = await githubFetch(token, `/repos/${org}/${r.repo}/collaborators/${r.user}`, {
+        method: "DELETE",
+      });
       if (res.status === 204 || res.status === 404) {
-        lines.push(`github: removed/absent collaborator ${r.user} on ${org}/${r.repo} [${res.status}]`);
+        lines.push(
+          `github: removed/absent collaborator ${r.user} on ${org}/${r.repo} [${res.status}]`,
+        );
       } else {
         lines.push(`github: remove ${r.user}: ${res.status} ${await res.text()}`);
       }
@@ -212,6 +271,8 @@ export async function teardownLiveSystems(people: readonly TestPerson[]): Promis
     lines.push("google: remove Drive shares to personal Gmail addresses manually / via Drive API");
   }
 
-  lines.push("fixtures/: left intact (dev dataset). Delete fixtures/test-org only if you intend to.");
+  lines.push(
+    "fixtures/: left intact (dev dataset). Delete fixtures/test-org only if you intend to.",
+  );
   return { lines };
 }

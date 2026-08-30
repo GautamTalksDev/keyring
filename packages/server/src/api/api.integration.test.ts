@@ -13,21 +13,19 @@ import { verifyStoredAuditChain } from "../db/store.js";
 
 /** Reset append-only ledger for a clean chain (test-only). */
 async function resetAuditLedger(db: AppDb): Promise<void> {
-  await db.execute(
-    sql`ALTER TABLE audit_records DISABLE TRIGGER audit_records_append_only`,
-  );
+  await db.execute(sql`ALTER TABLE audit_records DISABLE TRIGGER audit_records_append_only`);
   await db.execute(sql`TRUNCATE TABLE audit_records`);
-  await db.execute(
-    sql`ALTER TABLE audit_records ENABLE TRIGGER audit_records_append_only`,
-  );
+  await db.execute(sql`ALTER TABLE audit_records ENABLE TRIGGER audit_records_append_only`);
 }
 
 describe("API scan → approve → execute → audit (fixture)", () => {
   let db: AppDb;
   let close: () => Promise<void>;
   let app: ReturnType<typeof createApp>;
+  const previousDemo = process.env.KEYRING_DEMO;
 
   beforeAll(async () => {
+    process.env.KEYRING_DEMO = "1";
     const handle = await openTestDatabase("api");
     db = handle.db;
     close = handle.close;
@@ -38,6 +36,8 @@ describe("API scan → approve → execute → audit (fixture)", () => {
   afterAll(async () => {
     await app.close();
     await close();
+    if (previousDemo === undefined) delete process.env.KEYRING_DEMO;
+    else process.env.KEYRING_DEMO = previousDemo;
   });
 
   it("runs the full path and verifies the hash chain", async () => {
@@ -109,5 +109,25 @@ describe("API scan → approve → execute → audit (fixture)", () => {
 
     const chain = await verifyStoredAuditChain(db);
     expect(chain.ok).toBe(true);
+
+    const reset = await app.inject({
+      method: "POST",
+      url: `/scans/${scanId}/demo-reset`,
+    });
+    expect(reset.statusCode).toBe(200);
+    expect((reset.json() as { reset: number }).reset).toBeGreaterThan(0);
+
+    const resetCards = await app.inject({
+      method: "GET",
+      url: `/scans/${scanId}/cards`,
+    });
+    const resetCardData = resetCards.json() as {
+      cards: Array<{ status: string; decision: unknown }>;
+    };
+    expect(resetCardData.cards.every((card) => card.status === "pending")).toBe(true);
+    expect(resetCardData.cards.every((card) => card.decision === null)).toBe(true);
+
+    const audit = await app.inject({ method: "GET", url: "/audit" });
+    expect((audit.json() as { records: unknown[] }).records).toHaveLength(0);
   }, 60_000);
 });

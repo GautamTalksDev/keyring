@@ -4,10 +4,10 @@ Keyring inventories **through TrueForge-configured MCP servers**, not through Oc
 
 ## Servers
 
-| TrueForge name | Catalog / setup | Purpose |
-| --- | --- | --- |
-| `github` | Shipped catalog → [https://api.githubcopilot.com/mcp/](https://api.githubcopilot.com/mcp/) (header auth PAT) | Org repos, collaborators, teams, commits (emails), optional deploy keys / PAT insights |
-| `google_workspace` | **Custom** remote MCP URL in Settings → Connectors | Directory users/groups + Drive shares outside the org |
+| TrueForge name     | Catalog / setup                                                                                              | Purpose                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `github`           | Shipped catalog → [https://api.githubcopilot.com/mcp/](https://api.githubcopilot.com/mcp/) (header auth PAT) | Org repos, collaborators, teams, commits (emails), optional deploy keys / PAT insights |
+| `google_workspace` | **Custom** remote MCP URL in Settings → Connectors                                                           | Directory users/groups + Drive shares outside the org                                  |
 
 Register both under **TrueForge → Settings → Connectors** before live inventory. See [MCP servers](https://trueforge.dev/mcp-servers).
 
@@ -27,13 +27,14 @@ Your Google MCP must expose (names matter):
 
 From the official GitHub MCP: `search_repositories`, `list_repository_collaborators`, `get_teams`, `get_team_members`, `list_commits`.
 
-Mutating (execute path): `remove_repository_collaborator`, `remove_team_member`, optional `delete_deploy_key` (permanent).
+Mutating (execute path): `remove_repository_collaborator`, `delete_repository_invitation`, `remove_team_member`, optional `delete_deploy_key` (permanent). Pending invitations use `delete_repository_invitation`, not collaborator removal.
 
-Optional inventory (fixture MCP implements; live skips if missing): `list_deploy_keys`, `list_org_pat_insights`.
+Optional inventory (fixture MCP implements; live skips if missing): `list_repository_invitations`, `list_deploy_keys`, `list_org_pat_insights`. A live MCP that does not expose invitations can still inventory active collaborators, but cannot discover pending invitations.
 
 ## Revoke + dry-run
 
 See [EXECUTE.md](./EXECUTE.md). Product execute and MCP `revoke_grant` route through the same connectors. `KEYRING_REVOKE_BACKEND=live` + MCP URLs required for real GitHub/Google mutations. Dry-run default prevents accidental revoke.
+
 ## Local / CI (fixtures)
 
 ```bash

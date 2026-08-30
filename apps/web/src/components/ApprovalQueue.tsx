@@ -13,12 +13,16 @@ export function ApprovalQueue({
   scanId,
   scanStatus,
   onCardUpdated,
+  guidedMode = false,
+  guidedCardId = null,
 }: {
   cards: ApiCard[];
   systemIds: string[];
   scanId: string | null;
   scanStatus: string;
   onCardUpdated: (card: ApiCard) => void;
+  guidedMode?: boolean;
+  guidedCardId?: string | null;
 }) {
   const ordered = useMemo(() => sortCards(cards), [cards]);
   const unattributed = ordered.filter(isUnattributed);
@@ -36,6 +40,14 @@ export function ApprovalQueue({
   useEffect(() => {
     setFocusIndex(0);
   }, [scanId]);
+
+  useEffect(() => {
+    if (!guidedCardId) return;
+    document.getElementById(`approval-card-${guidedCardId}`)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, [guidedCardId]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -142,7 +154,7 @@ export function ApprovalQueue({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {pendingCount > 0 && checked.size === 0 ? (
+            {!guidedMode && pendingCount > 0 && checked.size === 0 ? (
               <button
                 type="button"
                 className="border border-[var(--color-line-strong)] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[var(--color-mute)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
@@ -155,7 +167,7 @@ export function ApprovalQueue({
                 Select all pending
               </button>
             ) : null}
-            {checked.size > 0 ? (
+            {!guidedMode && checked.size > 0 ? (
               <>
                 <span className="font-mono text-[12px] text-[var(--color-mute)]">
                   {checked.size} selected
@@ -183,14 +195,16 @@ export function ApprovalQueue({
                 </button>
               </>
             ) : null}
-            <button
-              type="button"
-              disabled={!scanId || approved.length === 0}
-              onClick={() => setExecuteOpen(true)}
-              className="border border-[var(--color-ink)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-white disabled:opacity-40"
-            >
-              Execute approved ({approved.length})
-            </button>
+            {!guidedMode ? (
+              <button
+                type="button"
+                disabled={!scanId || approved.length === 0}
+                onClick={() => setExecuteOpen(true)}
+                className="border border-[var(--color-ink)] bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--color-ink)] hover:bg-[var(--color-ink)] hover:text-white disabled:opacity-40"
+              >
+                Execute approved ({approved.length})
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
@@ -259,6 +273,7 @@ export function ApprovalQueue({
                       onApprove={() => void decide(card, "approve")}
                       onHold={() => setHoldTarget(card)}
                       onReject={() => void decide(card, "reject")}
+                      actionsDisabled={guidedMode}
                     />
                   ))}
                 </div>
@@ -292,6 +307,7 @@ export function ApprovalQueue({
                       onApprove={() => void decide(card, "approve")}
                       onHold={() => setHoldTarget(card)}
                       onReject={() => void decide(card, "reject")}
+                      actionsDisabled={guidedMode}
                     />
                   ))}
                 </div>
