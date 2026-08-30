@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 
 import type { Database } from "../db/client.js";
 import {
@@ -18,10 +19,7 @@ import {
  *   /mcp/scan   — read-only inventory + reconcile + persist (no write creds)
  *   /mcp/mutate — revoke only (write creds); harness must require approval
  */
-export function registerMcpRoutes(
-  app: FastifyInstance,
-  opts: { db: Database["db"] | null },
-): void {
+export function registerMcpRoutes(app: FastifyInstance, opts: { db: Database["db"] | null }): void {
   app.post("/mcp/scan", async (req, reply) => {
     await handleMcpPost(req, reply, {
       serverName: "keyring-scan",
@@ -94,7 +92,7 @@ async function handleMcpPost(
 }
 
 async function dispatchOne(
-  body: JsonRpcRequest,
+  body: unknown,
   cfg: {
     serverName: string;
     tools: McpToolDef[];
@@ -104,8 +102,17 @@ async function dispatchOne(
     ) => Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }>;
   },
 ): Promise<Record<string, unknown> | null> {
-  const id = body.id ?? null;
-  const method = body.method;
+  const parsed = jsonRpcRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return {
+      jsonrpc: "2.0",
+      id: null,
+      error: { code: -32600, message: "Invalid JSON-RPC request" },
+    };
+  }
+  const request = parsed.data;
+  const id = request.id ?? null;
+  const method = request.method;
 
   // Notifications (no id) → 202
   if (id === undefined || id === null) {
@@ -146,18 +153,15 @@ async function dispatchOne(
   }
 
   if (method === "tools/call") {
-    const params = (body.params ?? {}) as {
-      name?: string;
-      arguments?: Record<string, unknown>;
-    };
-    const name = params.name;
-    if (!name) {
+    const parsedParams = toolsCallParamsSchema.safeParse(request.params ?? {});
+    if (!parsedParams.success) {
       return {
         jsonrpc: "2.0",
         id,
-        error: { code: -32602, message: "tools/call requires params.name" },
+        error: { code: -32602, message: "Invalid tools/call parameters" },
       };
     }
+    const { name, arguments: args } = parsedParams.data;
     const allowed = cfg.tools.some((t) => t.name === name);
     if (!allowed) {
       return {
@@ -166,7 +170,7 @@ async function dispatchOne(
         error: { code: -32601, message: `Unknown tool: ${name}` },
       };
     }
-    const toolResult = await cfg.call(name, params.arguments ?? {});
+    const toolResult = await cfg.call(name, args ?? {});
     return { jsonrpc: "2.0", id, result: toolResult };
   }
 
@@ -176,3 +180,19 @@ async function dispatchOne(
     error: { code: -32601, message: `Method not found: ${method}` },
   };
 }
+
+const jsonRpcRequestSchema = z
+  .object({
+    jsonrpc: z.literal("2.0").optional(),
+    id: z.union([z.string(), z.number(), z.null()]).optional(),
+    method: z.string().min(1),
+    params: z.unknown().optional(),
+  })
+  .strict();
+
+const toolsCallParamsSchema = z
+  .object({
+    name: z.string().min(1),
+    arguments: z.record(z.unknown()).optional(),
+  })
+  .strict();

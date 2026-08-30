@@ -71,7 +71,7 @@ describe("reconcileIdentities — fixture test org", () => {
     ).toBe(true);
     expect(
       ada.identifiers.some(
-        (i) => i.kind === "personal_email" && i.value === "ada.numbers.personal@gmail.com",
+        (i) => i.kind === "personal_email" && i.value === "ada.numbers.personal@keyring-test.example",
       ),
     ).toBe(true);
     expect(
@@ -230,7 +230,7 @@ describe("reconcileIdentities — adversarial table", () => {
           {
             displayName: "Jordan Lee",
             workEmails: ["jordan.lee@acme.test"],
-            personalEmails: ["jordan.personal@gmail.com", "jlee.contract@proton.me"],
+        personalEmails: ["jordan.personal@acme.test", "jlee.contract@acme.test"],
           },
         ];
         const grants = [
@@ -267,7 +267,7 @@ describe("reconcileIdentities — adversarial table", () => {
               identifiers: [
                 {
                   kind: "personal_email",
-                  value: "jordan.personal@gmail.com",
+                  value: "jordan.personal@acme.test",
                   source: "google_workspace",
                 },
               ],
@@ -293,7 +293,7 @@ describe("reconcileIdentities — adversarial table", () => {
               identifiers: [
                 {
                   kind: "personal_email",
-                  value: "jlee.contract@proton.me",
+                  value: "jlee.contract@acme.test",
                   source: "google_workspace",
                 },
               ],

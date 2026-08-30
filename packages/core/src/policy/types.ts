@@ -32,6 +32,20 @@ export interface ServiceAccountPolicy {
   resource_ids?: string[];
 }
 
+export interface DeclaredAgentPolicy {
+  /** Stable id used to match an agent registration. */
+  id: string;
+  name: string;
+  runtime: string;
+  /** Named human owner or responsible team. */
+  owner: string;
+  purpose: string;
+  agent_ids?: string[];
+  key_ids?: string[];
+  tools?: string[];
+  mcp_servers?: string[];
+}
+
 export interface AutoApproveRule {
   id: string;
   description: string;
@@ -62,6 +76,7 @@ export interface KeyringPolicy {
   version: number;
   protected: ProtectedResourceRule[];
   service_accounts: ServiceAccountPolicy[];
+  declared_agents: DeclaredAgentPolicy[];
   staleness: {
     defaults: PolicyStalenessThresholds;
     systems?: Partial<Record<string, Partial<PolicyStalenessThresholds>>>;
@@ -80,6 +95,7 @@ export const EMPTY_POLICY: KeyringPolicy = {
   version: 1,
   protected: [],
   service_accounts: [],
+  declared_agents: [],
   staleness: { defaults: { ...DEFAULT_STALENESS } },
   auto_approve: { enabled: false, rules: [] },
 };

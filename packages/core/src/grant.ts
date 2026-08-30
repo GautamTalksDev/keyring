@@ -12,17 +12,39 @@ import { requireNonEmptyEvidence, type Evidence, type NonEmptyEvidence } from ".
 import { sha256Hex } from "./hash.js";
 import { identifierSortKey, normalizeIdentifier, type Identifier } from "./identifier.js";
 
-export type System = "google_workspace" | "github" | "slack" | "aws" | "notion" | "custom";
+export type System =
+  "google_workspace" | "github" | "slack" | "aws" | "notion" | "agent_identity" | "custom";
 
-export type PrincipalKind = "human" | "service_account" | "unknown";
+export type PrincipalKind = "human" | "service_account" | "ai_agent" | "unknown";
 
 export type Principal =
   | { kind: "human"; identifiers: Identifier[] }
   | { kind: "service_account"; identifiers: Identifier[] }
+  | {
+      kind: "ai_agent";
+      identifiers: Identifier[];
+      agentName: string;
+      runtime: string;
+      declaredPurpose?: string;
+      reachableTools: string[];
+      registeredBy?: string;
+      declarationStatus: "declared" | "unregistered";
+    }
   | { kind: "unknown"; identifiers: Identifier[] };
 
 export type ResourceKind =
-  "repo" | "drive_folder" | "iam_role" | "channel" | "database" | "bucket" | "page" | "other";
+  | "repo"
+  | "drive_folder"
+  | "iam_role"
+  | "channel"
+  | "database"
+  | "bucket"
+  | "page"
+  | "mcp_server"
+  | "github_app"
+  | "agent_registration"
+  | "oauth_grant"
+  | "other";
 
 export interface Resource {
   id: ResourceId;
@@ -128,10 +150,17 @@ export function createGrant(input: CreateGrantInput): Grant {
     displayName: input.resource.displayName,
     kind: input.resource.kind,
   };
-  const principal: Principal = {
-    kind: input.principal.kind,
-    identifiers: input.principal.identifiers.map(normalizeIdentifier),
-  };
+  const principal: Principal =
+    input.principal.kind === "ai_agent"
+      ? {
+          ...input.principal,
+          identifiers: input.principal.identifiers.map(normalizeIdentifier),
+          reachableTools: [...input.principal.reachableTools],
+        }
+      : {
+          kind: input.principal.kind,
+          identifiers: input.principal.identifiers.map(normalizeIdentifier),
+        };
   return {
     id: grantIdFor({ system: input.system, resource, principal }),
     system: input.system,

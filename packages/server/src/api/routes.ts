@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
+import { redactErrorMessage, redactSecrets } from "@keyring/core";
 
 import type { Database } from "../db/client.js";
 import {
@@ -21,6 +22,7 @@ import {
   cardIdParamSchema,
   createScanBodySchema,
   executeScanBodySchema,
+  executeScanQuerySchema,
   scanIdParamSchema,
 } from "./schemas.js";
 import { executeApprovedCards } from "../services/execute.js";
@@ -46,7 +48,7 @@ function initSse(reply: FastifyReply): void {
 
 function writeSse(reply: FastifyReply, event: string, data: unknown): void {
   reply.raw.write(`event: ${event}\n`);
-  reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+  reply.raw.write(`data: ${JSON.stringify(redactSecrets(data))}\n\n`);
 }
 
 export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db"] }): void {
@@ -83,12 +85,16 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
     return {
       scanId: scan.id,
       status: scan.status,
-      error: scan.error,
+      error: scan.error ? redactErrorMessage(scan.error) : null,
       grantsDiscovered: scan.grantsDiscovered,
       startedAt: scan.startedAt,
       finishedAt: scan.finishedAt,
       driver: meta.driver ?? null,
       recordingId: meta.recordingId ?? null,
+      cardCount: meta.cardCount ?? null,
+      humanIdentityCount: meta.humanIdentityCount ?? null,
+      agentIdentityCount: meta.agentIdentityCount ?? null,
+      systemCount: meta.systemCount ?? null,
       costs,
     };
   });
@@ -188,6 +194,28 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
       scanId: params.id,
       status: scan.status,
       cards: cards.map(serializeCard),
+      counts: {
+        cardCount: cards.length,
+        humanIdentityCount: new Set(
+          cards
+            .filter((card) => card.grant.principal.kind === "human")
+            .map(
+              (card) => card.attribution.resolvedTo ?? card.grant.principal.identifiers[0]?.value,
+            ),
+        ).size,
+        agentIdentityCount: new Set(
+          cards
+            .filter((card) => card.grant.principal.kind === "ai_agent")
+            .map(
+              (card) =>
+                card.grant.principal.identifiers.find((id) => id.kind === "agent_id")?.value ??
+                (card.grant.principal.kind === "ai_agent"
+                  ? card.grant.principal.agentName
+                  : undefined),
+            ),
+        ).size,
+        systemCount: new Set(cards.map((card) => card.grant.system)).size,
+      },
       costs,
       driver: meta.driver ?? null,
       recordingId: meta.recordingId ?? null,
@@ -240,7 +268,7 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
     });
 
     req.log.info(
-      { cardId: params.id, decision: body.decision, by: body.by },
+      { cardId: params.id, decision: body.decision },
       "card decision recorded (intent only)",
     );
 
@@ -275,9 +303,11 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
   app.post("/scans/:id/execute", async (req, reply) => {
     let params;
     let body;
+    let query;
     try {
       params = scanIdParamSchema.parse(req.params);
       body = executeScanBodySchema.parse(req.body ?? {});
+      query = executeScanQuerySchema.parse(req.query);
     } catch (err) {
       if (err instanceof ZodError) return zodError(reply, err);
       throw err;
@@ -289,9 +319,7 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
     }
 
     const log = scanLog(req.log, params.id);
-    const wantsStream =
-      req.headers.accept?.includes("text/event-stream") ||
-      (req.query as { stream?: string }).stream === "1";
+    const wantsStream = req.headers.accept?.includes("text/event-stream") || query.stream === "1";
 
     if (wantsStream) {
       initSse(reply);
@@ -321,7 +349,7 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
       dryRun: body.dryRun,
       log,
     });
-    return { scanId: params.id, ...summary };
+    return redactSecrets({ scanId: params.id, ...summary });
   });
 
   app.get("/audit", async (req, reply) => {
@@ -351,10 +379,16 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
       throw err;
     }
 
+    const exportSecret = process.env.KEYRING_EXPORT_SECRET?.trim();
+    if (!exportSecret) {
+      return reply.code(503).send({
+        error: "export_signing_unavailable",
+        message: "Audit export signing requires KEYRING_EXPORT_SECRET to be configured.",
+      });
+    }
+
     const chain = await listAuditChain(db, { cardId: query.cardId });
     const verification = await verifyStoredAuditChain(db);
-    const secret = process.env.KEYRING_EXPORT_SECRET ?? "keyring-dev-export-secret";
-
     if (query.format === "csv") {
       const header = "id,cardId,action,approvedBy,approvedAt,executedAt,result,error,prevHash,hash";
       const lines = chain.map((r) =>
@@ -374,7 +408,7 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
           .join(","),
       );
       const body = [header, ...lines].join("\n") + "\n";
-      const { signature, algorithm } = signExport(body, secret);
+      const { signature, algorithm } = signExport(body, exportSecret);
       reply.header("content-type", "text/csv; charset=utf-8");
       reply.header("x-keyring-signature", signature);
       reply.header("x-keyring-signature-alg", algorithm);
@@ -389,7 +423,7 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
       records: chain.map(serializeAudit),
     };
     const body = `${JSON.stringify(payload, null, 2)}\n`;
-    const { signature, algorithm } = signExport(body, secret);
+    const { signature, algorithm } = signExport(body, exportSecret);
     reply.header("content-type", "application/json; charset=utf-8");
     reply.header("x-keyring-signature", signature);
     reply.header("x-keyring-signature-alg", algorithm);
@@ -403,7 +437,7 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
 
 function serializeCard(card: Awaited<ReturnType<typeof getApprovalCard>>) {
   if (!card) return null;
-  return {
+  return redactSecrets({
     id: card.id,
     status: card.status,
     proposedAction: card.proposedAction,
@@ -432,7 +466,7 @@ function serializeCard(card: Awaited<ReturnType<typeof getApprovalCard>>) {
       discoveredAt: card.grant.discoveredAt.toISOString(),
       createdAt: card.grant.createdAt?.toISOString() ?? null,
     },
-  };
+  });
 }
 
 function serializeAudit(r: Awaited<ReturnType<typeof listAuditRecords>>[number]) {
@@ -444,8 +478,8 @@ function serializeAudit(r: Awaited<ReturnType<typeof listAuditRecords>>[number])
     approvedAt: r.approvedAt.toISOString(),
     executedAt: r.executedAt.toISOString(),
     result: r.result,
-    error: r.error ?? null,
-    evidenceSnapshot: r.evidenceSnapshot,
+    error: r.error ? redactErrorMessage(r.error) : null,
+    evidenceSnapshot: redactSecrets(r.evidenceSnapshot),
     prevHash: r.prevHash,
     hash: r.hash,
   };

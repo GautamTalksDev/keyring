@@ -1,44 +1,49 @@
-# Approval queue UI
+# Web interface
 
-The product surface in `apps/web`. Dense, calm, keyboard-driven — Linear/Vercel dashboard register, not a marketing page.
+The web app is in `apps/web`. It shows scan progress beside the ApprovalCard queue.
 
-## Layout
+## Scan activity
 
-- **Left:** agent activity (SSE) — subagents per system, counts found, sandbox banner when identity reconciliation runs
-- **Right:** approval queue — Unattributed pinned first, then attributed; cards show everything without a click
+The left panel displays the scan status, connected systems, subagent progress, reconciliation state, costs, and event log. The API sends these updates over server sent events. Reconnecting to a scan receives the stored event history before new events.
 
-## Card contents (always visible)
+## Approval queue
 
-## Card contents (always visible)
+The queue puts unattributed findings first. Each card shows:
 
-Principal + confidence, system/capability/resource, created & last-used with staleness, risk score + reasons, **Restorable** / **Permanent** badge, **Protected** (keyring.yml), **Auto: &lt;rule-id&gt;** when an auto-approve rule fired, plain-English attribution.
+- Principal and confidence.
+- Source system, capability, and resource.
+- Created time and last used time.
+- Risk score and the reasons behind it.
+- Proposed action and whether the action is restorable.
+- Protected and auto approval policy markers.
+- The evidence chain used for attribution.
 
-## Actions
-
-Approve / Hold (note required) / Reject. Bulk select + bulk approve/reject — **protected cards are never bulk-approved**. Keyboard: `j`/`k` move, `a`/`h`/`r` decide, `x` select.
+An operator can approve, hold with a note, or reject a pending card. Bulk approval never includes protected cards. Approval records intent only.
 
 ## Execute
 
-Separate step: summary of approved actions, Restorable vs Permanent callouts, **dry-run on by default**, explicit confirm, then per-card results (including undo hints when restorable). Approving never executes.
+Execution is a separate action. The confirmation view shows the approved cards, dry run state, permanent actions, and available undo hints. The UI displays streamed per card results after execution. Dry run is on by default.
 
 ## Guided demo
 
-The replay demo exposes **Run guided demo**. It starts a real replay scan, waits on
-the five-system SSE activity, approves safe cards individually, then pauses on the
-protected CI card. **Continue** records the human hold with the note
-`belongs to CI, flag the owner`, executes approved cards through the API, and ends
-on the verified audit ledger. **Stop** aborts the guided controller and resets the
-take; running it again creates a fresh scan. The controls are not rendered outside
-demo/replay mode.
+The replay demo shows **Run guided demo** only when the app is in demo or replay mode. It starts a replay scan, waits for the five system activity, holds the summary, approves safe cards one at a time, and stops at the protected CI card.
 
-## Run
+**Continue** records the hold note `belongs to CI, flag the owner`, then executes the approved cards through the API and finishes on the verified audit ledger. **Stop** aborts the local run, waits for any in flight decision request, resets decisions, and leaves the UI ready for another take. Append-only audit records remain available for review. The demo reset endpoint is available only when `KEYRING_DEMO=1`.
+
+## Run the UI
+
+For the local demo:
 
 ```bash
-# API
-DATABASE_URL=postgresql://keyring:keyring@localhost:5432/keyring pnpm --filter @keyring/server start
-
-# UI (proxies /scans /cards to :3001)
-pnpm --filter @keyring/web dev
+pnpm install
+pnpm demo
 ```
 
-Open http://localhost:5173 — start a scan for `Ada Lovelace`.
+For a separate API and UI:
+
+```bash
+pnpm -F @keyring/server dev
+pnpm -F @keyring/web dev
+```
+
+Open http://localhost:5173. Use `VITE_API_PORT` when the API is not on port 3001.

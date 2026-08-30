@@ -5,6 +5,8 @@ const MS_DAY = 86_400_000;
 export interface ScanSummaryCounts {
   grants: number;
   systems: number;
+  humanIdentities: number;
+  agentIdentities: number;
   unattributed: number;
   overYearIdle: number;
   irreversible: number;
@@ -15,9 +17,25 @@ export function countScanSummary(
   systemIds: Iterable<string> = cards.map((card) => card.grant.system),
   now = new Date(),
 ): ScanSummaryCounts {
+  const humanIdentities = new Set(
+    cards
+      .filter((card) => card.grant.principal.kind === "human")
+      .map((card) => card.attribution.resolvedTo ?? principalLabel(card)),
+  ).size;
+  const agentIdentities = new Set(
+    cards
+      .filter((card) => card.grant.principal.kind === "ai_agent")
+      .map(
+        (card) =>
+          card.grant.principal.identifiers.find((identifier) => identifier.kind === "agent_id")
+            ?.value ?? principalLabel(card),
+      ),
+  ).size;
   return {
     grants: cards.length,
     systems: new Set(systemIds).size,
+    humanIdentities,
+    agentIdentities,
     unattributed: cards.filter(isUnattributed).length,
     overYearIdle: cards.filter((card) => staleness(card.grant.lastUsedAt, now).level === "critical")
       .length,
@@ -28,6 +46,7 @@ export function countScanSummary(
 export function scanSummaryText(counts: ScanSummaryCounts): string {
   const clauses = [
     `${counts.grants} grant${counts.grants === 1 ? "" : "s"} across ${counts.systems} system${counts.systems === 1 ? "" : "s"}.`,
+    `${counts.humanIdentities} human identit${counts.humanIdentities === 1 ? "y" : "ies"} and ${counts.agentIdentities} AI agent identit${counts.agentIdentities === 1 ? "y" : "ies"}.`,
     counts.unattributed > 0 ? `${counts.unattributed} we cannot attribute to anyone.` : null,
     counts.overYearIdle > 0 ? `${counts.overYearIdle} not used in over a year.` : null,
     counts.irreversible > 0
@@ -38,6 +57,9 @@ export function scanSummaryText(counts: ScanSummaryCounts): string {
 }
 
 export function principalLabel(card: ApiCard): string {
+  if (card.grant.principal.kind === "ai_agent" && card.grant.principal.agentName) {
+    return card.grant.principal.agentName;
+  }
   const ids = card.grant.principal.identifiers;
   if (ids.length === 0) return "Unknown principal";
   const preferred =
@@ -96,6 +118,7 @@ export function systemLabel(system: string): string {
     slack: "Slack",
     notion: "Notion",
     aws: "AWS",
+    agent_identity: "Agent identities",
   };
   return map[system] ?? system;
 }

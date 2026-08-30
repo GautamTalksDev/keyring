@@ -16,4 +16,5 @@ export * from "./identifier.js";
 export * from "./identity/index.js";
 export * from "./person.js";
 export * from "./policy/index.js";
+export * from "./redact.js";
 export * from "./risk.js";

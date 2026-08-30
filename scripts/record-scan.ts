@@ -18,6 +18,9 @@ import { openTestDatabase } from "../packages/server/src/db/test-db.js";
 import { loadRecording, recordingsDir } from "../packages/server/src/recording/store.js";
 import { createStandaloneApp } from "../packages/server/src/standalone.js";
 
+// Recordings are presentation fixtures, so they intentionally use demo limits.
+process.env.KEYRING_DEMO ??= "1";
+
 const databaseUrl =
   process.env.DATABASE_URL ?? "postgresql://keyring:keyring@localhost:5432/keyring";
 

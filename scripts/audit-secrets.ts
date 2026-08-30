@@ -2,7 +2,7 @@
  * Scan working tree (+ git history when present) for leaked secrets.
  * Exit 1 if high-confidence hits are found.
  */
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,28 +47,41 @@ const PATTERNS: Array<{ name: string; re: RegExp }> = [
   },
 ];
 
-const ALLOW_SUBSTRINGS = [
-  "AKIA_KEYRING_CI_ORPHAN_LOOKALIKE",
-  "example",
-  "YOUR_",
-  "placeholder",
-];
+export type Hit = { file: string; name: string; line: number; excerpt: string };
 
-type Hit = { file: string; name: string; line: number; excerpt: string };
+const HISTORY_PATTERN = PATTERNS.map(({ re }) => re.source)
+  .join("|")
+  .replaceAll("(?:", "(")
+  .replaceAll("\\d", "[0-9]");
 
-function walk(dir: string, out: string[]): void {
+const ALLOW_SUBSTRINGS = ["AKIA_KEYRING_CI_ORPHAN_LOOKALIKE", "example", "YOUR_", "placeholder"];
+
+function redactSecrets(value: string): string {
+  return PATTERNS.reduce(
+    (redacted, { re }) => redacted.replace(new RegExp(re.source, re.flags), "[REDACTED]"),
+    value,
+  );
+}
+
+function walk(dir: string, out: string[], baseRoot = root): void {
   let entries;
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
+  } catch (err) {
+    throw new Error(
+      `working tree walk failed for ${path.relative(baseRoot, dir)}: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    );
   }
   for (const ent of entries) {
     if (SKIP_DIR.has(ent.name)) continue;
     const p = path.join(dir, ent.name);
-    if (ent.isDirectory()) walk(p, out);
+    if (ent.isDirectory()) walk(p, out, baseRoot);
     else if (
-      /\.(ts|tsx|js|mjs|cjs|json|yml|yaml|md|env|sh|toml)$/i.test(ent.name) ||
+      /\.(ts|tsx|js|mjs|cjs|json|yml|yaml|md|env|sh|toml|pem|key|p12|pfx|credentials|secret)$/i.test(
+        ent.name,
+      ) ||
       ent.name.startsWith(".env")
     ) {
       out.push(p);
@@ -76,7 +89,7 @@ function walk(dir: string, out: string[]): void {
   }
 }
 
-function scanText(file: string, text: string, hits: Hit[]): void {
+function scanText(file: string, text: string, hits: Hit[], baseRoot = root): void {
   const lines = text.split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
@@ -84,49 +97,99 @@ function scanText(file: string, text: string, hits: Hit[]): void {
     for (const { name, re } of PATTERNS) {
       if (re.test(line)) {
         hits.push({
-          file: path.relative(root, file),
+          file: path.relative(baseRoot, file),
           name,
           line: i + 1,
-          excerpt: line.trim().slice(0, 120),
+          excerpt: redactSecrets(line.trim()).slice(0, 120),
         });
       }
     }
   }
 }
 
-function main(): void {
-  const hits: Hit[] = [];
-  const files: string[] = [];
-  walk(root, files);
-  for (const f of files) {
-    try {
-      scanText(f, fs.readFileSync(f, "utf8"), hits);
-    } catch {
-      /* skip unreadable */
-    }
+function scanGitHistory(baseRoot: string, hits: Hit[]): string {
+  let commits: string[];
+  try {
+    commits = execFileSync("git", ["-C", baseRoot, "rev-list", "--all", "--reflog"], {
+      encoding: "utf8",
+      maxBuffer: 20 * 1024 * 1024,
+    })
+      .split("\n")
+      .filter(Boolean);
+  } catch (err) {
+    throw new Error(`git history scan failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 
-  let historyNote = "no .git directory — working tree only";
-  const gitDir = path.join(root, ".git");
-  if (fs.existsSync(gitDir)) {
-    historyNote = "scanned git history (git grep -a)";
+  for (const commit of commits) {
+    let output = "";
     try {
-      const out = execSync(
-        `git -C "${root}" grep -a -n -E "sk-(live|proj)-|sk-ant-api|ghp_|github_pat_|AKIA[0-9A-Z]{16}|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY" || true`,
+      output = execFileSync(
+        "git",
+        [
+          "-C",
+          baseRoot,
+          "grep",
+          "-a",
+          "-n",
+          "-E",
+          HISTORY_PATTERN,
+          commit,
+          "--",
+          ":(exclude)scripts/audit-secrets.ts",
+        ],
         { encoding: "utf8", maxBuffer: 20 * 1024 * 1024 },
       );
-      for (const line of out.split("\n").filter(Boolean)) {
-        if (ALLOW_SUBSTRINGS.some((a) => line.includes(a))) continue;
-        hits.push({
-          file: `(history) ${line.slice(0, 80)}`,
-          name: "git-grep",
-          line: 0,
-          excerpt: line.slice(0, 160),
-        });
-      }
     } catch (err) {
-      historyNote = `git history scan failed: ${err}`;
+      const status =
+        typeof err === "object" && err !== null && "status" in err ? err.status : undefined;
+      if (status !== 1) {
+        throw new Error(
+          `git history scan failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+      continue;
     }
+
+    for (const line of output.split("\n").filter(Boolean)) {
+      const match = line.match(/^([^:]+):([^:]+):(\d+):(.*)$/s);
+      if (!match) continue;
+      if (ALLOW_SUBSTRINGS.some((allowed) => line.includes(allowed))) continue;
+      hits.push({
+        file: `(history ${match[1]!.slice(0, 12)}) ${match[2]!}`,
+        name: "git-history",
+        line: Number(match[3]),
+        excerpt: redactSecrets(match[4]!.trim()).slice(0, 120),
+      });
+    }
+  }
+  return `scanned ${commits.length} commits`;
+}
+
+export function scanWorkingTree(scanRoot = root): { files: string[]; hits: Hit[] } {
+  const hits: Hit[] = [];
+  const files: string[] = [];
+  walk(scanRoot, files, scanRoot);
+  for (const f of files) {
+    try {
+      scanText(f, fs.readFileSync(f, "utf8"), hits, scanRoot);
+    } catch (err) {
+      throw new Error(
+        `working tree scan failed for ${path.relative(scanRoot, f)}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
+  }
+  return { files, hits };
+}
+
+function main(): void {
+  const { files, hits } = scanWorkingTree();
+
+  let historyNote = "no .git directory, working tree only";
+  const gitDir = path.join(root, ".git");
+  if (fs.existsSync(gitDir)) {
+    historyNote = scanGitHistory(root, hits);
   }
 
   console.log(`Secret audit: ${files.length} files; ${historyNote}`);
@@ -141,4 +204,6 @@ function main(): void {
   process.exit(1);
 }
 
-main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
+}

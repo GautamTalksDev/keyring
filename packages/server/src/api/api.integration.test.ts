@@ -128,6 +128,90 @@ describe("API scan → approve → execute → audit (fixture)", () => {
     expect(resetCardData.cards.every((card) => card.decision === null)).toBe(true);
 
     const audit = await app.inject({ method: "GET", url: "/audit" });
-    expect((audit.json() as { records: unknown[] }).records).toHaveLength(0);
+    const auditData = audit.json() as { records: unknown[]; verification: { ok: boolean } };
+    expect(auditData.records.length).toBeGreaterThan(0);
+    expect(auditData.verification.ok).toBe(true);
+  }, 60_000);
+
+  it("fails closed when audit export signing is not configured", async () => {
+    const previousSecret = process.env.KEYRING_EXPORT_SECRET;
+    delete process.env.KEYRING_EXPORT_SECRET;
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/audit/export?format=json",
+      });
+
+      expect(response.statusCode).toBe(503);
+      expect(response.json()).toMatchObject({
+        error: "export_signing_unavailable",
+      });
+      expect(response.json().message).toContain("KEYRING_EXPORT_SECRET");
+    } finally {
+      if (previousSecret === undefined) delete process.env.KEYRING_EXPORT_SECRET;
+      else process.env.KEYRING_EXPORT_SECRET = previousSecret;
+    }
+  });
+
+  it("signs audit exports with configured key material", async () => {
+    const previousSecret = process.env.KEYRING_EXPORT_SECRET;
+    process.env.KEYRING_EXPORT_SECRET = "integration-test-export-secret";
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/audit/export?format=json",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers["x-keyring-signature"]).toBeTruthy();
+      expect(response.headers["x-keyring-signature-alg"]).toBe("hmac-sha256");
+    } finally {
+      if (previousSecret === undefined) delete process.env.KEYRING_EXPORT_SECRET;
+      else process.env.KEYRING_EXPORT_SECRET = previousSecret;
+    }
+  });
+
+  it("keeps every approval card in a non-demo scan", async () => {
+    const previousDemo = process.env.KEYRING_DEMO;
+    delete process.env.KEYRING_DEMO;
+    try {
+      const create = await app.inject({
+        method: "POST",
+        url: "/scans",
+        payload: { scope: "all", driver: "fixture", delayMsPerGrant: 0 },
+      });
+      expect(create.statusCode).toBe(202);
+      const { scanId } = create.json() as { scanId: string };
+
+      for (let i = 0; i < 80; i++) {
+        const status = await app.inject({ method: "GET", url: `/scans/${scanId}` });
+        const value = status.json() as { status: string };
+        if (
+          value.status === "completed" ||
+          value.status === "failed" ||
+          value.status === "cost_capped" ||
+          value.status === "partial"
+        ) {
+          expect(value.status).toBe("completed");
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+
+      const cardsResponse = await app.inject({
+        method: "GET",
+        url: `/scans/${scanId}/cards`,
+      });
+      expect(cardsResponse.statusCode).toBe(200);
+      const cards = cardsResponse.json() as {
+        cards: unknown[];
+        counts: { cardCount: number };
+      };
+      expect(cards.cards.length).toBeGreaterThan(9);
+      expect(cards.counts.cardCount).toBe(cards.cards.length);
+    } finally {
+      if (previousDemo === undefined) delete process.env.KEYRING_DEMO;
+      else process.env.KEYRING_DEMO = previousDemo;
+    }
   }, 60_000);
 });

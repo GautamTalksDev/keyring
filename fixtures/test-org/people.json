@@ -5,7 +5,7 @@
       "key": "ada",
       "displayName": "Ada Lovelace",
       "workEmail": "ada@keyring-test.example",
-      "personalEmail": "ada.numbers.personal@gmail.com",
+      "personalEmail": "ada.numbers.personal@keyring-test.example",
       "githubUsername": "analyticalengine",
       "slackUserId": "U_ADA_TEST",
       "slackDisplayName": "ada.l"
@@ -14,7 +14,7 @@
       "key": "grace",
       "displayName": "Grace Hopper",
       "workEmail": "grace@keyring-test.example",
-      "personalEmail": "grace.h.navy.mail@gmail.com",
+      "personalEmail": "grace.h.navy.mail@keyring-test.example",
       "githubUsername": "cobol-compiler",
       "slackUserId": "U_GRACE_TEST",
       "slackDisplayName": "ghopper"
@@ -23,7 +23,7 @@
       "key": "alan",
       "displayName": "Alan Turing",
       "workEmail": "alan@keyring-test.example",
-      "personalEmail": "enigmamachine88@gmail.com",
+      "personalEmail": "enigmamachine88@keyring-test.example",
       "githubUsername": "bombe-ops",
       "slackUserId": "U_ALAN_TEST",
       "slackDisplayName": "a.turing"

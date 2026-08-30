@@ -1,17 +1,16 @@
 import Fastify from "fastify";
+import { redactErrorMessage } from "@keyring/core";
 
 import { createApp } from "./app.js";
 import { openDatabase, usePgliteMode } from "./db/client.js";
 import { startReauditScheduler } from "./services/reaudit-cron.js";
 
 const port = Number(process.env.PORT ?? 3001);
-const host = process.env.HOST ?? "0.0.0.0";
+const host = process.env.HOST ?? "127.0.0.1";
 
 let db = null as Awaited<ReturnType<typeof openDatabase>>["db"] | null;
 const shouldOpenDb =
-  Boolean(process.env.DATABASE_URL) ||
-  usePgliteMode() ||
-  process.env.KEYRING_DEMO === "1";
+  Boolean(process.env.DATABASE_URL) || usePgliteMode() || process.env.KEYRING_DEMO === "1";
 
 if (shouldOpenDb) {
   try {
@@ -19,7 +18,10 @@ if (shouldOpenDb) {
     db = handle.db;
     console.log(`Database: ${handle.kind}`);
   } catch (err) {
-    console.warn("DB open failed; product API disabled", err);
+    console.warn(
+      "DB open failed; product API disabled",
+      redactErrorMessage(err instanceof Error ? err.message : String(err)),
+    );
   }
 } else {
   console.warn(

@@ -1,9 +1,11 @@
 import {
   buildApprovalCards,
   createGrant,
+  declaredAgentsFromPolicy,
   keyAttributionsFromPolicy,
   runReconciliationFromJson,
   serviceAccountsFromPolicy,
+  type AgentDeclaration,
   type ApprovalCard,
   type CreateGrantInput,
   type DirectoryEntry,
@@ -12,7 +14,12 @@ import {
   type ReconciliationResult,
   type ServiceAccountPolicy,
 } from "@keyring/core";
-import { createFixtureConnector } from "@keyring/connectors";
+import {
+  createAgentIdentityConnector,
+  createFixtureAgentIdentitySource,
+  createFixtureConnector,
+  type AgentIdentityRecord,
+} from "@keyring/connectors";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,6 +34,7 @@ const SYSTEM_LABELS: Record<string, string> = {
   slack: "Slack",
   notion: "Notion",
   aws: "AWS",
+  agent_identity: "Agent identities",
 };
 
 export interface ConnectedSystem {
@@ -52,7 +60,13 @@ export interface CompactGrant {
  */
 export async function listConnectedSystems(): Promise<ConnectedSystem[]> {
   const grants = await loadFullFixtureGrants();
-  const ids = [...new Set(grants.map((g) => g.system))].sort();
+  const agentRecords = await loadAgentIdentityRecords();
+  const ids = [
+    ...new Set([
+      ...grants.map((g) => g.system),
+      ...(agentRecords.length ? ["agent_identity"] : []),
+    ]),
+  ].sort();
   return ids.map((id) => ({
     id,
     displayName: SYSTEM_LABELS[id] ?? id,
@@ -89,9 +103,14 @@ export async function inventorySystem(
     onGrant?: (found: number) => void;
   } = {},
 ): Promise<{ systemId: string; grants: CompactGrant[]; count: number }> {
-  const connector = createFixtureConnector({
-    fixturesDir: path.join(repoRoot, "fixtures/test-org"),
-  });
+  const connector =
+    systemId === "agent_identity"
+      ? createAgentIdentityConnector({
+          source: createFixtureAgentIdentitySource(await loadAgentIdentityRecords()),
+        })
+      : createFixtureConnector({
+          fixturesDir: path.join(repoRoot, "fixtures/test-org"),
+        });
 
   const grants: Grant[] = [];
   for await (const grant of connector.inventory({
@@ -147,12 +166,34 @@ export async function loadFullFixtureGrants(): Promise<Grant[]> {
   );
 }
 
+export async function loadAgentIdentityRecords(): Promise<AgentIdentityRecord[]> {
+  const raw = JSON.parse(
+    await readFile(path.join(repoRoot, "fixtures/test-org/agent-identities.json"), "utf8"),
+  ) as { records: AgentIdentityRecord[] };
+  return raw.records;
+}
+
+export async function loadAllFixtureGrants(): Promise<Grant[]> {
+  const regular = await loadFullFixtureGrants();
+  const connector = createAgentIdentityConnector({
+    source: createFixtureAgentIdentitySource(await loadAgentIdentityRecords()),
+  });
+  const agents: Grant[] = [];
+  for await (const grant of connector.inventory({
+    credentials: { kind: "read", token: "fixture-scan" },
+  })) {
+    agents.push(grant);
+  }
+  return [...regular, ...agents];
+}
+
 export function buildReconcileInputJson(
   grants: Grant[],
   directory: DirectoryEntry[],
   opts: {
     keyAttributions?: KeyAttribution[];
     serviceAccounts?: ServiceAccountPolicy[];
+    declaredAgents?: AgentDeclaration[];
   } = {},
 ) {
   return {
@@ -175,6 +216,7 @@ export function buildReconcileInputJson(
           })),
         }
       : {}),
+    ...(opts.declaredAgents?.length ? { declaredAgents: opts.declaredAgents } : {}),
   };
 }
 
@@ -188,7 +230,7 @@ export async function runIdentityReconciliation(mergedGrantIds?: string[]): Prom
   input: ReturnType<typeof buildReconcileInputJson>;
   policy: Awaited<ReturnType<typeof loadPolicy>>;
 }> {
-  const all = await loadFullFixtureGrants();
+  const all = await loadAllFixtureGrants();
   const grants =
     mergedGrantIds && mergedGrantIds.length > 0
       ? all.filter((g) => mergedGrantIds.includes(g.id))
@@ -198,6 +240,17 @@ export async function runIdentityReconciliation(mergedGrantIds?: string[]): Prom
   const input = buildReconcileInputJson(grants, directory, {
     keyAttributions: keyAttributionsFromPolicy(policy),
     serviceAccounts: serviceAccountsFromPolicy(policy),
+    declaredAgents: declaredAgentsFromPolicy(policy).map((agent) => ({
+      id: agent.id,
+      name: agent.name,
+      runtime: agent.runtime,
+      owner: agent.owner,
+      purpose: agent.purpose,
+      agentIds: agent.agent_ids,
+      keyIds: agent.key_ids,
+      tools: agent.tools,
+      mcpServers: agent.mcp_servers,
+    })),
   });
   const reconciliation = runReconciliationFromJson(input);
   return { reconciliation, grantCount: grants.length, input, policy };
@@ -234,18 +287,27 @@ export async function runFixtureScanPipeline(
 
   const { reconciliation, grantCount, policy } = await runIdentityReconciliation(mergedIds);
   void grantCount;
-  const grants = await loadFullFixtureGrants();
+  const grants = await loadAllFixtureGrants();
   let cards = buildApprovalCards({ grants, reconciliation, policy });
   if (opts.personHint) {
     const hint = opts.personHint.toLowerCase();
     cards = cards.filter((c) => {
       const ids = c.grant.principal.identifiers.map((i) => i.value.toLowerCase()).join(" ");
       const name = c.attribution.reasoning.toLowerCase();
-      return ids.includes(hint) || name.includes(hint);
+      return ids.includes(hint) || name.includes(hint) || c.grant.principal.kind === "ai_agent";
     });
   }
-
   return { grants, reconciliation, cards, systems };
+}
+
+export function limitDemoCards(cards: ApprovalCard[], max = 9): ApprovalCard[] {
+  if (cards.length <= max) return cards;
+  const priority = cards.filter(
+    (card) =>
+      card.grant.principal.kind === "ai_agent" || card.protected === true || card.status === "held",
+  );
+  const rest = cards.filter((card) => !priority.includes(card));
+  return [...priority, ...rest].slice(0, max);
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {

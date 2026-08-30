@@ -1,11 +1,12 @@
-import { buildApprovalCards } from "@keyring/core";
+import { buildApprovalCards, redactErrorMessage, type Grant } from "@keyring/core";
 import type { FastifyBaseLogger } from "fastify";
 import { TrueForge } from "@truefoundry/trueforge-sdk";
 
 import {
   inventorySystem,
+  limitDemoCards,
   listConnectedSystems,
-  loadFullFixtureGrants,
+  loadAllFixtureGrants,
   runIdentityReconciliation,
 } from "../agent/scan.js";
 import { newScanId, scanBus, scanLog, type ScanProgressEvent } from "../api/progress.js";
@@ -391,8 +392,12 @@ async function runFixtureFanOutAndPersist(
         recorder,
       );
       log.warn(
-        { systemId: system.id, err, errorKind: classified.kind },
-        "subagent failed — continuing partial scan",
+        {
+          systemId: system.id,
+          error: redactErrorMessage(err instanceof Error ? err.message : String(err)),
+          errorKind: classified.kind,
+        },
+        "subagent failed, continuing partial scan",
       );
     }
   });
@@ -467,7 +472,7 @@ async function runFixtureFanOutAndPersist(
     resultSummary: `${reconciliation.clusters.length} clusters, ${reconciliation.unknown.grantIds.length} unknown`,
   });
 
-  const grants = (await loadFullFixtureGrants()).filter((g) => mergedIds.includes(g.id));
+  const grants = (await loadAllFixtureGrants()).filter((g) => mergedIds.includes(g.id));
   let cards = buildApprovalCards({ grants, reconciliation, policy });
 
   if (body.person) {
@@ -476,6 +481,7 @@ async function runFixtureFanOutAndPersist(
       (c) =>
         c.attribution.reasoning.toLowerCase().includes(hint) ||
         c.grant.principal.identifiers.some((i) => i.value.toLowerCase().includes(hint)) ||
+        c.grant.principal.kind === "ai_agent" ||
         c.status === "held" ||
         c.attribution.resolvedTo === undefined ||
         c.protected === true,
@@ -537,6 +543,10 @@ async function runFixtureFanOutAndPersist(
   if (wantDiff && diffOnly && diff.baselineScanId) {
     cards = filterCardsToDiff(cards, diff);
   }
+  if (process.env.KEYRING_DEMO === "1") {
+    cards = limitDemoCards(cards);
+  }
+  const identityCounts = countIdentityKinds(grants);
 
   publish(
     {
@@ -574,6 +584,9 @@ async function runFixtureFanOutAndPersist(
     })),
     clusters: reconciliation.clusters.length,
     unknown: reconciliation.unknown.grantIds.length,
+    ...identityCounts,
+    cardCount: cards.length,
+    systemCount: new Set(grants.map((grant) => grant.system)).size,
     costs,
     recordingId: opts.recordingId ?? null,
     reaudit: body.reaudit ?? false,
@@ -600,6 +613,8 @@ async function runFixtureFanOutAndPersist(
       type: "cards.persisted",
       scanId,
       cardCount: cards.length,
+      ...identityCounts,
+      systemCount: new Set(grants.map((grant) => grant.system)).size,
       at: new Date().toISOString(),
     },
     recorder,
@@ -685,7 +700,7 @@ async function runReplay(
     previousEventAt = Number.isFinite(eventAt) ? eventAt : previousEventAt;
   }
 
-  const grants = await loadFullFixtureGrants();
+  const grants = await loadAllFixtureGrants();
   const byId = new Map(grants.map((g) => [g.id as string, g]));
   for (const gid of recording.grantIds) {
     const g = byId.get(gid);
@@ -726,10 +741,12 @@ async function runReplay(
       (c) =>
         c.attribution.reasoning.toLowerCase().includes(hint) ||
         c.grant.principal.identifiers.some((i) => i.value.toLowerCase().includes(hint)) ||
+        c.grant.principal.kind === "ai_agent" ||
         c.status === "held" ||
         c.attribution.resolvedTo === undefined,
     );
   }
+  domainCards = limitDemoCards(domainCards);
   for (const card of domainCards) {
     await upsertApprovalCard(db, card, scanId);
   }
@@ -945,6 +962,30 @@ function serializeCardForRecording(card: {
     attribution: card.attribution,
     grantId: card.grant.id,
   };
+}
+
+function countIdentityKinds(grants: Array<{ principal: Grant["principal"] }>): {
+  humanIdentityCount: number;
+  agentIdentityCount: number;
+} {
+  const humans = new Set<string>();
+  const agents = new Set<string>();
+  for (const grant of grants) {
+    if (grant.principal.kind === "ai_agent") {
+      agents.add(
+        grant.principal.identifiers.find((identifier) => identifier.kind === "agent_id")?.value ??
+          grant.principal.agentName,
+      );
+    } else if (grant.principal.kind === "human") {
+      humans.add(
+        grant.principal.identifiers
+          .map((identifier) => `${identifier.kind}:${identifier.value}`)
+          .sort()
+          .join("|"),
+      );
+    }
+  }
+  return { humanIdentityCount: humans.size, agentIdentityCount: agents.size };
 }
 
 function summarizeTfEvent(event: unknown): string | undefined {

@@ -36,7 +36,7 @@ export const TEST_PEOPLE: readonly TestPerson[] = [
     key: "ada",
     displayName: "Ada Lovelace",
     workEmail: "ada@keyring-test.example",
-    personalEmail: "ada.numbers.personal@gmail.com",
+    personalEmail: "ada.numbers.personal@keyring-test.example",
     githubUsername: "analyticalengine",
     slackUserId: "U_ADA_TEST",
     slackDisplayName: "ada.l",
@@ -45,7 +45,7 @@ export const TEST_PEOPLE: readonly TestPerson[] = [
     key: "grace",
     displayName: "Grace Hopper",
     workEmail: "grace@keyring-test.example",
-    personalEmail: "grace.h.navy.mail@gmail.com",
+    personalEmail: "grace.h.navy.mail@keyring-test.example",
     githubUsername: "cobol-compiler",
     slackUserId: "U_GRACE_TEST",
     slackDisplayName: "ghopper",
@@ -54,7 +54,7 @@ export const TEST_PEOPLE: readonly TestPerson[] = [
     key: "alan",
     displayName: "Alan Turing",
     workEmail: "alan@keyring-test.example",
-    personalEmail: "enigmamachine88@gmail.com",
+    personalEmail: "enigmamachine88@keyring-test.example",
     githubUsername: "bombe-ops",
     slackUserId: "U_ALAN_TEST",
     slackDisplayName: "a.turing",
@@ -85,9 +85,7 @@ function workGrant(
     discoveredAt: DISCOVERED_AT,
     principal: {
       kind: "human",
-      identifiers: [
-        { kind: "work_email", value: person.workEmail, source: evidenceSource },
-      ],
+      identifiers: [{ kind: "work_email", value: person.workEmail, source: evidenceSource }],
     },
     evidence: [
       {
@@ -102,7 +100,9 @@ function workGrant(
 /**
  * Full messy grant set. Order is stable for idempotent fixture writes.
  */
-export function buildTestOrgGrantInputs(people: readonly TestPerson[] = TEST_PEOPLE): CreateGrantInput[] {
+export function buildTestOrgGrantInputs(
+  people: readonly TestPerson[] = TEST_PEOPLE,
+): CreateGrantInput[] {
   const ada = people.find((p) => p.key === "ada")!;
   const grace = people.find((p) => p.key === "grace")!;
   const alan = people.find((p) => p.key === "alan")!;
@@ -301,9 +301,7 @@ export function buildTestOrgGrantInputs(people: readonly TestPerson[] = TEST_PEO
       system: "github",
       principal: {
         kind: "human",
-        identifiers: [
-          { kind: "username", value: grace.githubUsername, source: "github" },
-        ],
+        identifiers: [{ kind: "username", value: grace.githubUsername, source: "github" }],
       },
       resource: {
         id: "keyring-test/infra",
@@ -399,9 +397,7 @@ export function buildTestOrgGrantInputs(people: readonly TestPerson[] = TEST_PEO
       system: "github",
       principal: {
         kind: "human",
-        identifiers: [
-          { kind: "username", value: alan.githubUsername, source: "github" },
-        ],
+        identifiers: [{ kind: "username", value: alan.githubUsername, source: "github" }],
       },
       resource: {
         id: "keyring-test/crypto-notes",
@@ -545,16 +541,12 @@ export function buildTestOrgGrantInputs(people: readonly TestPerson[] = TEST_PEO
   return grants;
 }
 
-export function materializeTestOrgGrants(
-  people: readonly TestPerson[] = TEST_PEOPLE,
-): Grant[] {
+export function materializeTestOrgGrants(people: readonly TestPerson[] = TEST_PEOPLE): Grant[] {
   return buildTestOrgGrantInputs(people).map((input) => createGrant(input));
 }
 
 export function findCiTrapGrant(grants: readonly Grant[]): Grant {
-  const trap = grants.find((g) =>
-    g.evidence.some((e) => e.claim.includes(CI_TRAP_MARKER)),
-  );
+  const trap = grants.find((g) => g.evidence.some((e) => e.claim.includes(CI_TRAP_MARKER)));
   if (!trap) {
     throw new Error("CI trap grant missing from test org dataset");
   }

@@ -1,13 +1,9 @@
-import type { ApprovalCardId, PersonId } from "./brand.js";
+import type { ApprovalCardId, PersonId, PrincipalId } from "./brand.js";
 import type { Confidence } from "./evidence.js";
 import type { Grant } from "./grant.js";
 import type { RiskScore } from "./risk.js";
 
-export type ProposedActionKind =
-  | "revoke"
-  | "downgrade"
-  | "transfer_ownership"
-  | "flag_only";
+export type ProposedActionKind = "revoke" | "downgrade" | "transfer_ownership" | "flag_only";
 
 export type ProposedAction =
   | { kind: "revoke"; description: string }
@@ -18,7 +14,7 @@ export type ProposedAction =
 export type ApprovalStatus = "pending" | "approved" | "held" | "rejected";
 
 export interface Attribution {
-  resolvedTo?: PersonId;
+  resolvedTo?: PersonId | PrincipalId;
   confidence: Confidence;
   reasoning: string;
 }

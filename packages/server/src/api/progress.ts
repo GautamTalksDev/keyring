@@ -77,6 +77,9 @@ export type ScanProgressEvent =
       type: "cards.persisted";
       scanId: string;
       cardCount: number;
+      humanIdentityCount?: number;
+      agentIdentityCount?: number;
+      systemCount?: number;
       at: string;
     }
   | {

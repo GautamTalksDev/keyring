@@ -12,6 +12,7 @@
  *   pnpm register:agent
  */
 
+import { redactErrorMessage } from "@keyring/core";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -57,7 +58,9 @@ function reportResult(
     console.log(`${label}: ${result.status} ok`);
     return true;
   }
-  console.error(`${label}: ${result.status} failed\nResponse body: ${result.body || "(empty)"}`);
+  console.error(
+    `${label}: ${result.status} failed\nResponse body: ${redactErrorMessage(result.body || "(empty)")}`,
+  );
   return false;
 }
 

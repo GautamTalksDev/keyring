@@ -74,7 +74,7 @@
         "identifiers": [
           {
             "kind": "personal_email",
-            "value": "ada.numbers.personal@gmail.com",
+            "value": "ada.numbers.personal@keyring-test.example",
             "source": "google_workspace"
           }
         ]
@@ -95,7 +95,7 @@
       },
       "evidence": [
         {
-          "claim": "Drive folder shared to personal Gmail ada.numbers.personal@gmail.com (not work domain)",
+          "claim": "Drive folder shared to alternate address ada.numbers.personal@keyring-test.example (not work domain)",
           "source": "google_workspace",
           "confidence": "certain"
         },
@@ -220,7 +220,7 @@
         "identifiers": [
           {
             "kind": "personal_email",
-            "value": "grace.h.navy.mail@gmail.com",
+            "value": "grace.h.navy.mail@keyring-test.example",
             "source": "google_workspace"
           }
         ]
@@ -240,7 +240,7 @@
       },
       "evidence": [
         {
-          "claim": "Customer contracts vault shared to personal Gmail grace.h.navy.mail@gmail.com",
+          "claim": "Customer contracts vault shared to alternate address grace.h.navy.mail@keyring-test.example",
           "source": "google_workspace",
           "confidence": "certain"
         }
@@ -352,7 +352,7 @@
         "identifiers": [
           {
             "kind": "personal_email",
-            "value": "enigmamachine88@gmail.com",
+            "value": "enigmamachine88@keyring-test.example",
             "source": "google_workspace"
           }
         ]
@@ -372,7 +372,7 @@
       },
       "evidence": [
         {
-          "claim": "War-room exports shared to personal Gmail enigmamachine88@gmail.com",
+          "claim": "War-room exports shared to alternate address enigmamachine88@keyring-test.example",
           "source": "google_workspace",
           "confidence": "certain"
         }

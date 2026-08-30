@@ -28,6 +28,12 @@ export interface ApiCard {
     principal: {
       kind: string;
       identifiers: Array<{ kind: string; value: string; source: string }>;
+      agentName?: string;
+      runtime?: string;
+      declaredPurpose?: string;
+      reachableTools?: string[];
+      registeredBy?: string;
+      declarationStatus?: "declared" | "unregistered";
     };
     evidence: Array<{ claim: string; source: string; confidence: string }>;
     revocable: { possible: boolean; reversible: boolean; method: string };

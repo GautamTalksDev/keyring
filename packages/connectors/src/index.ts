@@ -12,17 +12,19 @@ export type { McpCallRequest, McpCallResult, McpToolCaller } from "./mcp/types.j
 export { McpToolError } from "./mcp/types.js";
 export { createFixtureConnector } from "./fixture.js";
 export { createFixtureMcpToolCaller } from "./mcp/fixture-caller.js";
-export {
-  createRemoteMcpToolCaller,
-  createTrueForgeMcpToolCaller,
-} from "./mcp/trueforge-caller.js";
+export { createRemoteMcpToolCaller, createTrueForgeMcpToolCaller } from "./mcp/trueforge-caller.js";
 export { createGitHubConnector } from "./github/connector.js";
 export { createGoogleWorkspaceConnector } from "./google-workspace/connector.js";
-export { GITHUB_MCP_SERVER, GitHubMcpTools } from "./github/tools.js";
 export {
-  GOOGLE_WORKSPACE_MCP_SERVER,
-  GoogleWorkspaceMcpTools,
-} from "./google-workspace/tools.js";
+  createAgentIdentityConnector,
+  createFixtureAgentIdentitySource,
+  createMcpAgentIdentitySource,
+  type AgentIdentityConnectorOptions,
+  type AgentIdentityRecord,
+  type AgentIdentitySource,
+} from "./agent-identity/connector.js";
+export { GITHUB_MCP_SERVER, GitHubMcpTools } from "./github/tools.js";
+export { GOOGLE_WORKSPACE_MCP_SERVER, GoogleWorkspaceMcpTools } from "./google-workspace/tools.js";
 export {
   buildUndoHint,
   driveCapabilityToRole,

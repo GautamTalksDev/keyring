@@ -15,8 +15,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -b --pretty false && pnpm --filter @keyring/web exec tsc -p tsconfig.json --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write --ignore-unknown $(git ls-files)",
+    "format:check": "prettier --check --ignore-unknown $(git ls-files)",
     "db:migrate": "pnpm --filter @keyring/server db:migrate",
     "seed:test-org": "tsx scripts/seed-test-org.ts",
     "teardown:test-org": "tsx scripts/teardown-test-org.ts",
@@ -40,6 +40,6 @@
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.2",
-    "vitest": "^2.1.8"
+    "vitest": "^3.2.7"
   }
 }

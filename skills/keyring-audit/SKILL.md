@@ -1,9 +1,8 @@
----
-name: keyring-audit
-description: Audit or offboard a person — fan out one subagent per system, reconcile identities in the TrueForge sandbox, persist ApprovalCards, and stop before any revoke.
----
-
 # Keyring access audit
+
+This skill audits or offboards a person. It fans out one subagent per system,
+reconciles identities in the TrueForge sandbox, persists ApprovalCards, and
+stops before any revoke.
 
 Use this skill for **"audit access for …"** and **"offboard …"** requests.
 

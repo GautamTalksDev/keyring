@@ -1,0 +1,100 @@
+{
+  "records": [
+    {
+      "id": "agent-grant-keyring-reconciler",
+      "agentId": "keyring-reconciler",
+      "agentName": "Keyring Reconciler",
+      "runtime": "TrueForge",
+      "declaredPurpose": "Reconcile discovered grants and prepare an approval queue",
+      "reachableTools": ["keyring-mcp"],
+      "registeredBy": "platform@keyring-test.example",
+      "declarationStatus": "declared",
+      "identityType": "mcp_token",
+      "credentialId": "fixture-keyring-reconciler-mcp",
+      "system": "agent_identity",
+      "resource": {
+        "id": "trueforge/mcp/keyring",
+        "displayName": "Keyring MCP server registration",
+        "kind": "mcp_server"
+      },
+      "capability": "read",
+      "discoveredAt": "2026-08-29T12:00:00.000Z",
+      "lastUsedAt": "2026-08-29T11:45:00.000Z",
+      "evidence": [
+        {
+          "claim": "TrueForge registration names Keyring Reconciler and grants access to keyring-mcp",
+          "source": "trueforge:mcp/list_agent_identities",
+          "confidence": "certain",
+          "observedAt": "2026-08-29T12:00:00.000Z",
+          "locator": "agent/keyring-reconciler"
+        }
+      ]
+    },
+    {
+      "id": "agent-grant-rogue-deployer",
+      "agentId": "unregistered-deployer",
+      "agentName": "Unregistered Deployment Agent",
+      "runtime": "external-runner",
+      "declaredPurpose": "Unknown",
+      "reachableTools": ["github", "deploy-mcp"],
+      "registeredBy": "unknown",
+      "declarationStatus": "unregistered",
+      "identityType": "github_app",
+      "credentialId": "fixture-unregistered-deployer-write",
+      "system": "agent_identity",
+      "resource": {
+        "id": "github/app/unregistered-deployer",
+        "displayName": "Unregistered Deployment Agent installation",
+        "kind": "github_app"
+      },
+      "capability": "write",
+      "discoveredAt": "2026-08-29T12:01:00.000Z",
+      "evidence": [
+        {
+          "claim": "GitHub App installation is attributable to an automation agent, but no matching policy declaration exists",
+          "source": "github:list_app_installations",
+          "confidence": "certain",
+          "observedAt": "2026-08-29T12:01:00.000Z",
+          "locator": "installation/unregistered-deployer"
+        }
+      ]
+    },
+    {
+      "id": "agent-grant-keyring-self",
+      "agentId": "keyring-self",
+      "agentName": "Keyring",
+      "runtime": "TrueForge",
+      "declaredPurpose": "Inventory access and produce evidence-backed approval cards",
+      "reachableTools": ["keyring-mcp", "trueforge"],
+      "registeredBy": "security@keyring-test.example",
+      "declarationStatus": "declared",
+      "identityType": "mcp_token",
+      "credentialId": "fixture-keyring-self-mcp",
+      "system": "agent_identity",
+      "resource": {
+        "id": "trueforge/agent/keyring",
+        "displayName": "Keyring's own TrueForge agent registration",
+        "kind": "agent_registration"
+      },
+      "capability": "read",
+      "discoveredAt": "2026-08-29T12:02:00.000Z",
+      "lastUsedAt": "2026-08-29T12:01:30.000Z",
+      "evidence": [
+        {
+          "claim": "Keyring's TrueForge registration and MCP reach are visible to its own inventory",
+          "source": "trueforge:mcp/list_agent_identities",
+          "confidence": "certain",
+          "observedAt": "2026-08-29T12:02:00.000Z",
+          "locator": "agent/keyring-self"
+        },
+        {
+          "claim": "Keyring MCP read token is held by the Keyring agent",
+          "source": "keyring:self-inventory",
+          "confidence": "certain",
+          "observedAt": "2026-08-29T12:02:00.000Z",
+          "locator": "credential/fixture-keyring-self-mcp"
+        }
+      ]
+    }
+  ]
+}

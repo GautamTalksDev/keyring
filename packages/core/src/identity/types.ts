@@ -1,7 +1,7 @@
 import type { Confidence } from "../evidence.js";
 import type { Grant } from "../grant.js";
 import type { Identifier } from "../identifier.js";
-import type { GrantId, PersonId } from "../brand.js";
+import type { GrantId, PersonId, PrincipalId } from "../brand.js";
 
 /**
  * A known person from the org directory / IdP / HR system.
@@ -38,11 +38,24 @@ export interface ServiceAccountDeclaration {
   resourceIds?: string[];
 }
 
+export interface AgentDeclaration {
+  id: string;
+  name: string;
+  runtime: string;
+  owner: string;
+  purpose: string;
+  agentIds?: string[];
+  keyIds?: string[];
+  tools?: string[];
+  mcpServers?: string[];
+}
+
 export interface ReconciliationInput {
   grants: Grant[];
   directory?: DirectoryEntry[];
   keyAttributions?: KeyAttribution[];
   serviceAccounts?: ServiceAccountDeclaration[];
+  declaredAgents?: AgentDeclaration[];
   /**
    * Days around onboardedAt for temporal correlation (signal 6).
    * Default: 14.
@@ -50,7 +63,7 @@ export interface ReconciliationInput {
   onboardingWindowDays?: number;
 }
 
-export type ClusterKind = "human" | "service_account";
+export type ClusterKind = "human" | "service_account" | "ai_agent";
 
 /**
  * One resolved identity — a person or named service account — with the
@@ -61,6 +74,8 @@ export interface IdentityCluster {
   kind: ClusterKind;
   displayName: string;
   personId?: PersonId;
+  principalId?: PrincipalId;
+  agent?: AgentDeclaration;
   identifiers: Identifier[];
   grantIds: GrantId[];
   /** Weakest link in the chain that attached any grant to this cluster. */
@@ -89,4 +104,5 @@ export type SignalKind =
   | "username_in_directory"
   | "username_similarity"
   | "key_attribution"
+  | "agent_declaration"
   | "temporal_onboarding";

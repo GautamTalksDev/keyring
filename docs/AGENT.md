@@ -1,80 +1,54 @@
-# Keyring agent (Checkpoint 7)
+# Keyring agent
 
-Keyring runs as a **TrueForge agent** — not a custom loop. The harness owns planning, tool calls, subagents, sandbox, approvals, and session persistence.
+Keyring runs as a TrueForge agent. TrueForge manages the agent loop, model calls, MCP tools, subagents, sandbox work, approvals, and session persistence. Keyring supplies the access data and governance rules.
 
-## AgentSpec
+The manifest is [`agents/keyring.agent.json`](../agents/keyring.agent.json).
 
-[`agents/keyring.agent.json`](../agents/keyring.agent.json)
+## Agent configuration
 
-| Piece | Value |
-| --- | --- |
-| Model (free) | `keyring-stub/keyring-stub` — OpenAI-compatible stub |
-| MCP | `keyring-scan` (read-only) + `keyring-mutate` (revoke, approval required) |
-| Sandbox | `config.sandbox.enabled: true` |
-| Subagents | `config.dynamic_sub_agents.enabled: true` |
-| Skill | `keyring-audit` (git-backed when `KEYRING_SKILL_GIT_URL` is set) |
-| Approvals | `keyring-mutate.require_approval_for_tools`: `@write`, `@destructive`, `revoke_grant` |
+- The registered model comes from the configured provider. The local stub is `keyring-stub/keyring-stub`.
+- `keyring-scan` contains read only inventory and reconciliation tools.
+- `keyring-mutate` contains mutation tools and requires approval for write or destructive calls.
+- The `keyring-audit` skill is optional and can be registered from a Git source.
+- Dynamic subagents, Generative UI, user questions, and context management are enabled in the manifest.
+- The product specific `keyring` block is removed before the manifest is sent to TrueForge.
 
-## Flow: audit / offboard
+## Audit flow
 
-1. `list_connected_systems` → one TrueForge **subagent per system**.
-2. Each subagent: `inventory_system` → **compact Grants** only (FixtureConnector, read creds).
-3. Main agent merges ids → runs **identity reconciliation** (sandbox CLI preferred; stub uses MCP `run_identity_reconciliation` — same `@keyring/core` module).
-4. `persist_approval_cards` → risk + ApprovalCards in Postgres (when `DATABASE_URL` is set).
-5. **Stop.** Never revoke on the scan path. Write credentials exist only on `keyring-mutate`.
+1. The agent calls `list_connected_systems` on `keyring-scan`.
+2. TrueForge starts one subagent for each returned system.
+3. Each subagent calls `inventory_system` once and returns compact grants.
+4. The main agent combines grant ids and calls identity reconciliation.
+5. Reconciliation runs in the TrueForge sandbox when one is available. The fallback MCP tool uses the same `packages/core` identity code.
+6. The agent calls `persist_approval_cards`.
+7. The agent stops. It does not call `revoke_grant` during a scan.
 
-## Zero-cost local run
+The scan has read credentials only. Write credentials are confined to the mutate path and are used after an operator approves an action.
+
+## Local stub path
+
+The stub model is useful for testing TrueForge wiring without paid model calls:
 
 ```bash
-# Terminal A — TrueForge (session persistence)
-cd infra && cp -n .env.example .env && docker compose up --build
+KEYRING_ALLOW_STUB=1 pnpm stub:model
+```
 
-# Terminal B — Keyring MCP + API
-export DATABASE_URL=postgresql://keyring:keyring@localhost:5432/keyring
-pnpm db:migrate
-pnpm --filter @keyring/core build
-pnpm --filter @keyring/server build
-pnpm --filter @keyring/server start
+Register the agent after TrueForge and the Keyring MCP endpoints are running:
 
-# Terminal C — stub model (no paid LLM)
-KEYRING_SCAN_DELAY_MS=1000 pnpm stub:model
-
-# Terminal D — register connectors + agent
+```bash
 pnpm register:agent
 ```
 
-Then either:
+The script reports response bodies for failed registrations and verifies the agent with `GET /api/v1/agents`.
 
-- Open http://localhost:8791 → agent **keyring** → `audit access for Ada Lovelace`
-- Or: `KEYRING_SCAN_DELAY_MS=1000 pnpm demo:reconnect` (drop client mid-turn, poll — turn still running)
+## Docker networking
 
-### Docker networking
+When TrueForge runs in Docker, `localhost` inside the container is not the host. The registration script changes local Keyring MCP URLs to `host.docker.internal`. Set `KEYRING_MCP_PUBLIC_URL` when a different reachable URL is required.
 
-Compose TrueForge cannot reach `localhost` on the host. `register:agent` rewrites Keyring MCP URLs to `host.docker.internal`. Override with:
+On Linux, Docker must be configured to resolve `host.docker.internal`, usually with a host gateway entry.
 
-```bash
-KEYRING_MCP_PUBLIC_URL=http://host.docker.internal:3001 \
-KEYRING_STUB_MODEL_URL=http://host.docker.internal:4099/v1 \
-pnpm register:agent
-```
+## Reconnect behavior
 
-On Linux, ensure Docker can resolve `host.docker.internal` (Compose `extra_hosts` or use the host gateway IP).
+TrueForge persists sessions, turns, and events. Closing a browser tab does not cancel an in progress agent turn. Reopen the session or subscribe again to the same turn to continue receiving events.
 
-## Reconnect (film this)
-
-TrueForge persists sessions/turns/events in Postgres (hosted mode). Killing the browser tab does **not** cancel the turn.
-
-1. Start `audit access for …` with `KEYRING_SCAN_DELAY_MS` high enough to notice.
-2. Close the tab.
-3. Reopen the session (or `subscribeToTurn` / `getTurn` via API).
-4. Watch the same turn still running / completing.
-
-SDK recipe: [Resume a stream](https://trueforge.dev/api/use-agent#resume-a-stream) — persist `session.id`, `turnId`, `afterSequenceNumber`.
-
-## Separation of concerns
-
-| Do in TrueForge | Do in Keyring |
-| --- | --- |
-| Agent loop, subagents, sandbox, tool approval, session SSE | Grants, reconcile module, ApprovalCards, audit ledger, connectors |
-
-Do **not** hand-roll an agent loop, tool router, or approval pause in `packages/server`. See [`HARNESS.md`](./HARNESS.md).
+Keyring's audit ledger is separate from the TrueForge transcript. It records access decisions and execution results for governance.
