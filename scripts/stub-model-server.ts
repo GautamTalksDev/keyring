@@ -104,6 +104,60 @@ function completionText(content: string) {
   };
 }
 
+function streamCompletion(
+  res: ServerResponse,
+  completion: ReturnType<typeof completionWithTools> | ReturnType<typeof completionText>,
+) {
+  const choice = completion.choices[0]!;
+  const message = choice.message;
+  const id = completion.id;
+  const created = completion.created;
+  const model = completion.model;
+  const toolCalls = "tool_calls" in message ? message.tool_calls : undefined;
+  const firstChunk = {
+    id,
+    object: "chat.completion.chunk",
+    created,
+    model,
+    choices: [
+      {
+        index: 0,
+        delta: {
+          role: "assistant",
+          ...(toolCalls
+            ? {
+                tool_calls: toolCalls.map((call, index) => ({
+                  index,
+                  id: call.id,
+                  type: call.type,
+                  function: call.function,
+                })),
+              }
+            : { content: message.content ?? "" }),
+        },
+        finish_reason: null,
+      },
+    ],
+  };
+  const finishChunk = {
+    id,
+    object: "chat.completion.chunk",
+    created,
+    model,
+    choices: [{ index: 0, delta: {}, finish_reason: choice.finish_reason }],
+  };
+
+  res.writeHead(200, {
+    "content-type": "text/event-stream",
+    "cache-control": "no-cache",
+    connection: "keep-alive",
+    "access-control-allow-origin": "*",
+  });
+  res.write(`data: ${JSON.stringify(firstChunk)}\n\n`);
+  res.write(`data: ${JSON.stringify(finishChunk)}\n\n`);
+  res.end("data: [DONE]\n\n");
+}
+
 function findTool(tools: ToolDef[] | undefined, names: string[]): string | null {
   if (!tools) return null;
   for (const n of names) {
@@ -182,7 +236,10 @@ function unwrapMcpText(raw: string | null): unknown {
 }
 
 function decide(messages: ChatMessage[], tools: ToolDef[] | undefined) {
-  const blob = messages.map((m) => `${m.role}:${messageText(m)}`).join("\n").toLowerCase();
+  const blob = messages
+    .map((m) => `${m.role}:${messageText(m)}`)
+    .join("\n")
+    .toLowerCase();
 
   // Subagent: inventory a single system
   const systemMatch =
@@ -230,8 +287,7 @@ function decide(messages: ChatMessage[], tools: ToolDef[] | undefined) {
   const reconciled = messages.some(
     (m) =>
       m.role === "tool" &&
-      (messageText(m).includes("reconciliation") ||
-        m.name === "run_identity_reconciliation"),
+      (messageText(m).includes('"reconciliation"') || m.name === "run_identity_reconciliation"),
   );
   const persisted = messages.some(
     (m) =>
@@ -252,7 +308,9 @@ function decide(messages: ChatMessage[], tools: ToolDef[] | undefined) {
   }
 
   // After list: spawn subagents (or inventory sequentially if harness tool missing)
-  const systems = parseSystems(lastToolResult(messages, "list_connected_systems") ?? lastToolResult(messages));
+  const systems = parseSystems(
+    lastToolResult(messages, "list_connected_systems") ?? lastToolResult(messages),
+  );
   const hasSubagentResults =
     messages.filter((m) => m.role === "tool" && messageText(m).includes("grants")).length >=
     Math.max(1, systems.length);
@@ -314,7 +372,8 @@ function decide(messages: ChatMessage[], tools: ToolDef[] | undefined) {
   }
 
   if (reconciled && persistName) {
-    const reconRaw = lastToolResult(messages, "run_identity_reconciliation") ?? lastToolResult(messages);
+    const reconRaw =
+      lastToolResult(messages, "run_identity_reconciliation") ?? lastToolResult(messages);
     const recon = unwrapMcpText(reconRaw) as {
       reconciliation?: unknown;
     };
@@ -369,9 +428,14 @@ const server = createServer(async (req, res) => {
     const body = JSON.parse(raw) as {
       messages: ChatMessage[];
       tools?: ToolDef[];
+      stream?: boolean;
     };
     const out = decide(body.messages ?? [], body.tools);
-    json(res, 200, out);
+    if (body.stream) {
+      streamCompletion(res, out);
+    } else {
+      json(res, 200, out);
+    }
     return;
   }
 
