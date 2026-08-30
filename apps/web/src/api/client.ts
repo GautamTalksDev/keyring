@@ -207,8 +207,17 @@ export function subscribeScanStream(
     "execute.done",
     "subagent.failed",
   ];
+  const terminalTypes = new Set([
+    "scan.completed",
+    "scan.failed",
+    "scan.cost_capped",
+    "scan.partial",
+  ]);
   for (const t of types) {
-    es.addEventListener(t, (e) => forward(t, (e as MessageEvent).data));
+    es.addEventListener(t, (e) => {
+      forward(t, (e as MessageEvent).data);
+      if (terminalTypes.has(t)) es.close();
+    });
   }
   es.onmessage = (e) => forward("message", e.data);
   es.onerror = () => {
