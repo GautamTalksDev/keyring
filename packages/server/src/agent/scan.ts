@@ -18,10 +18,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadPolicy } from "../policy/load.js";
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../../../..",
-);
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 
 /** Display names for fixture systems (5 in test-org; fan-out uses one subagent each). */
 const SYSTEM_LABELS: Record<string, string> = {
@@ -75,9 +72,7 @@ export function grantToCompact(grant: Grant): CompactGrant {
     },
     principal: grant.principal,
     evidenceSources: grant.evidence.map((e) => e.source),
-    ...(grant.lastUsedAt
-      ? { lastUsedAt: grant.lastUsedAt.toISOString() }
-      : {}),
+    ...(grant.lastUsedAt ? { lastUsedAt: grant.lastUsedAt.toISOString() } : {}),
   };
 }
 
@@ -88,7 +83,11 @@ export function grantToCompact(grant: Grant): CompactGrant {
  */
 export async function inventorySystem(
   systemId: string,
-  opts: { delayMsPerGrant?: number; signal?: AbortSignal } = {},
+  opts: {
+    delayMsPerGrant?: number;
+    signal?: AbortSignal;
+    onGrant?: (found: number) => void;
+  } = {},
 ): Promise<{ systemId: string; grants: CompactGrant[]; count: number }> {
   const connector = createFixtureConnector({
     fixturesDir: path.join(repoRoot, "fixtures/test-org"),
@@ -105,6 +104,7 @@ export async function inventorySystem(
       await sleep(opts.delayMsPerGrant, opts.signal);
     }
     grants.push(grant);
+    opts.onGrant?.(grants.length);
   }
 
   return {
@@ -163,9 +163,7 @@ export function buildReconcileInputJson(
       ...(g.lastUsedAt ? { lastUsedAt: g.lastUsedAt.toISOString() } : {}),
     })),
     directory,
-    ...(opts.keyAttributions?.length
-      ? { keyAttributions: opts.keyAttributions }
-      : {}),
+    ...(opts.keyAttributions?.length ? { keyAttributions: opts.keyAttributions } : {}),
     ...(opts.serviceAccounts?.length
       ? {
           serviceAccounts: opts.serviceAccounts.map((sa) => ({
@@ -234,17 +232,14 @@ export async function runFixtureScanPipeline(
     for (const g of result.grants) mergedIds.push(g.id);
   }
 
-  const { reconciliation, grantCount, policy } =
-    await runIdentityReconciliation(mergedIds);
+  const { reconciliation, grantCount, policy } = await runIdentityReconciliation(mergedIds);
   void grantCount;
   const grants = await loadFullFixtureGrants();
   let cards = buildApprovalCards({ grants, reconciliation, policy });
   if (opts.personHint) {
     const hint = opts.personHint.toLowerCase();
     cards = cards.filter((c) => {
-      const ids = c.grant.principal.identifiers
-        .map((i) => i.value.toLowerCase())
-        .join(" ");
+      const ids = c.grant.principal.identifiers.map((i) => i.value.toLowerCase()).join(" ");
       const name = c.attribution.reasoning.toLowerCase();
       return ids.includes(hint) || name.includes(hint);
     });

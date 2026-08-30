@@ -4,17 +4,9 @@ import type { Grant } from "./grant.js";
 import { computeRiskScore } from "./risk.js";
 import type { ReconciliationResult } from "./identity/types.js";
 import { CI_TRAP_MARKER } from "./identity/trap.js";
-import type {
-  ApprovalCard,
-  Attribution,
-  ProposedAction,
-} from "./approval.js";
+import type { ApprovalCard, Attribution, ProposedAction } from "./approval.js";
 import type { KeyringPolicy } from "./policy/types.js";
-import {
-  findAutoApproveRule,
-  findProtectedRule,
-  resolveStaleness,
-} from "./policy/apply.js";
+import { findAutoApproveRule, findProtectedRule, resolveStaleness } from "./policy/apply.js";
 
 export interface BuildApprovalCardsInput {
   grants: Grant[];
@@ -34,12 +26,20 @@ export function buildApprovalCards(input: BuildApprovalCardsInput): ApprovalCard
   const { grants, reconciliation, now, policy } = input;
 
   const attributionByGrant = new Map<string, Attribution>();
+  const riskAttributionByGrant = new Map<
+    string,
+    { kind: "human" | "service_account"; confidence: "certain" | "probable" | "speculative" }
+  >();
   for (const cluster of reconciliation.clusters) {
     for (const gid of cluster.grantIds) {
       attributionByGrant.set(gid, {
         resolvedTo: cluster.personId,
         confidence: cluster.confidence,
         reasoning: cluster.reasoning,
+      });
+      riskAttributionByGrant.set(gid, {
+        kind: cluster.kind,
+        confidence: cluster.confidence,
       });
     }
   }
@@ -57,7 +57,11 @@ export function buildApprovalCards(input: BuildApprovalCardsInput): ApprovalCard
       reasoning: "No reconciliation attribution available for this grant.",
     };
     const staleness = resolveStaleness(policy, grant.system);
-    const risk = computeRiskScore(grant, { now, staleness });
+    const risk = computeRiskScore(grant, {
+      now,
+      staleness,
+      attribution: riskAttributionByGrant.get(grant.id),
+    });
     const protectedRule = findProtectedRule(grant, policy);
     const proposedAction = proposeAction(grant, attribution, protectedRule?.reason);
     const autoRule =
@@ -85,9 +89,7 @@ export function buildApprovalCards(input: BuildApprovalCardsInput): ApprovalCard
       risk,
       attribution,
       status,
-      ...(protectedRule
-        ? { protected: true, protectedReason: protectedRule.reason }
-        : {}),
+      ...(protectedRule ? { protected: true, protectedReason: protectedRule.reason } : {}),
       ...(autoRule && status === "approved"
         ? {
             autoApprovedBy: autoRule.id,
@@ -107,9 +109,7 @@ export function buildApprovalCards(input: BuildApprovalCardsInput): ApprovalCard
 
 function isCiTrap(grant: Grant): boolean {
   return grant.evidence.some(
-    (e) =>
-      e.claim.includes("KEYRING_DO_NOT_REVOKE_CI_INFRA") ||
-      e.claim.includes(CI_TRAP_MARKER),
+    (e) => e.claim.includes("KEYRING_DO_NOT_REVOKE_CI_INFRA") || e.claim.includes(CI_TRAP_MARKER),
   );
 }
 
@@ -139,8 +139,7 @@ function proposeAction(
   if (grant.principal.kind === "unknown" && attribution.resolvedTo === undefined) {
     return {
       kind: "flag_only",
-      description:
-        "Principal unresolved — flag for human investigation before any revoke.",
+      description: "Principal unresolved — flag for human investigation before any revoke.",
     };
   }
 
@@ -171,9 +170,6 @@ function proposeAction(
 }
 
 /** Filter cards that propose revoke for a specific person id. */
-export function cardsForPerson(
-  cards: ApprovalCard[],
-  personId: PersonId,
-): ApprovalCard[] {
+export function cardsForPerson(cards: ApprovalCard[], personId: PersonId): ApprovalCard[] {
   return cards.filter((c) => c.attribution.resolvedTo === personId);
 }

@@ -120,6 +120,50 @@ describe("risk scoring", () => {
     expect(noIds.reasons.some((r) => r.includes("no identifiers"))).toBe(true);
   });
 
+  it("uses reconciled ownership and confidence instead of raw principal kind", () => {
+    const unattributed = computeRiskScore(
+      baseGrant({
+        principal: {
+          kind: "unknown",
+          identifiers: [{ kind: "key_id", value: "AKIA...", source: "aws" }],
+        },
+      }),
+      { now },
+    );
+    const probableHuman = computeRiskScore(
+      baseGrant({
+        principal: {
+          kind: "unknown",
+          identifiers: [{ kind: "username", value: "ada", source: "github" }],
+        },
+      }),
+      {
+        now,
+        attribution: { kind: "human", confidence: "probable" },
+      },
+    );
+    const certainServiceAccount = computeRiskScore(
+      baseGrant({
+        principal: {
+          kind: "unknown",
+          identifiers: [{ kind: "key_id", value: "CI_KEY", source: "github" }],
+        },
+      }),
+      {
+        now,
+        attribution: { kind: "service_account", confidence: "certain" },
+      },
+    );
+
+    expect(unattributed.score).toBeGreaterThan(probableHuman.score);
+    expect(probableHuman.score).toBeGreaterThan(certainServiceAccount.score);
+    expect(unattributed.reasons.some((r) => r.includes("unresolved"))).toBe(true);
+    expect(probableHuman.reasons).toContain("principal resolved as human (probable) (+5)");
+    expect(certainServiceAccount.reasons).toContain(
+      "principal resolved as service_account (certain) (+0)",
+    );
+  });
+
   it("caps score at 100 and always returns reasons", () => {
     const risk = computeRiskScore(
       baseGrant({

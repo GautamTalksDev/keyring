@@ -47,7 +47,7 @@ export type ScanProgressEvent = {
 export interface SubagentState {
   systemId: string;
   displayName: string;
-  status: "running" | "done";
+  status: "queued" | "scanning" | "reconciling" | "failed" | "done";
   found: number;
   startedAt: string;
 }

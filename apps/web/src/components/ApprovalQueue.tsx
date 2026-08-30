@@ -69,17 +69,10 @@ export function ApprovalQueue({
   });
 
   async function bulk(decision: "approve" | "reject") {
-    const targets = ordered.filter(
-      (c) => checked.has(c.id) && c.status === "pending",
-    );
+    const targets = ordered.filter((c) => checked.has(c.id) && c.status === "pending");
     const protectedSkipped =
-      decision === "approve"
-        ? targets.filter((c) => c.protected === true)
-        : [];
-    const runnable =
-      decision === "approve"
-        ? targets.filter((c) => c.protected !== true)
-        : targets;
+      decision === "approve" ? targets.filter((c) => c.protected === true) : [];
+    const runnable = decision === "approve" ? targets.filter((c) => c.protected !== true) : targets;
     for (const card of runnable) {
       await decide(card, decision, undefined, decision === "approve");
     }
@@ -127,6 +120,7 @@ export function ApprovalQueue({
 
   const approved = ordered.filter((c) => c.status === "approved");
   const pendingCount = ordered.filter((c) => c.status === "pending").length;
+  const heldCount = ordered.filter((c) => c.status === "held").length;
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-[var(--color-surface)]">
@@ -136,14 +130,12 @@ export function ApprovalQueue({
             <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--color-faint)]">
               Approval queue
             </div>
-            <h2 className="mt-1 text-[18px] font-semibold tracking-tight">
-              Review access
-            </h2>
+            <h2 className="mt-1 text-[18px] font-semibold tracking-tight">Review access</h2>
             <p className="mt-1 text-[12px] text-[var(--color-mute)]">
-              {pendingCount} pending · {approved.length} approved ·{" "}
-              <span className="font-mono">j/k</span> move ·{" "}
-              <span className="font-mono">a/h/r</span> decide ·{" "}
-              <span className="font-mono">x</span> select
+              {pendingCount} pending · {heldCount} held · {approved.length} approved ·{" "}
+              {ordered.length} total · <span className="font-mono">j/k</span> move ·{" "}
+              <span className="font-mono">a/h/r</span> decide · <span className="font-mono">x</span>{" "}
+              select
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -153,9 +145,7 @@ export function ApprovalQueue({
                 className="border border-[var(--color-line-strong)] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[var(--color-mute)] hover:border-[var(--color-ink)] hover:text-[var(--color-ink)]"
                 onClick={() =>
                   setChecked(
-                    new Set(
-                      ordered.filter((c) => c.status === "pending").map((c) => c.id),
-                    ),
+                    new Set(ordered.filter((c) => c.status === "pending").map((c) => c.id)),
                   )
                 }
               >
@@ -324,9 +314,7 @@ function SectionHeading({
         >
           {title}
         </h3>
-        <p className="mt-0.5 max-w-xl text-[12px] text-[var(--color-mute)]">
-          {subtitle}
-        </p>
+        <p className="mt-0.5 max-w-xl text-[12px] text-[var(--color-mute)]">{subtitle}</p>
       </div>
       <span className="font-mono text-[12px] text-[var(--color-faint)]">{count}</span>
     </div>

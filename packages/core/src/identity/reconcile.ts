@@ -4,10 +4,7 @@ import type { Grant } from "../grant.js";
 import { sha256Hex } from "../hash.js";
 import type { Identifier } from "../identifier.js";
 import { normalizeEmailValue } from "../person.js";
-import {
-  USERNAME_SIMILARITY_THRESHOLD,
-  usernameNameSimilarity,
-} from "./similarity.js";
+import { USERNAME_SIMILARITY_THRESHOLD, usernameNameSimilarity } from "./similarity.js";
 import type {
   DirectoryEntry,
   IdentityCluster,
@@ -345,11 +342,12 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
     const seedKey = `sa:${sa.id}`;
     for (const g of grants) {
       const keyHit = (sa.keyIds ?? []).some((kid) =>
-        g.principal.identifiers.some(
-          (i) => i.kind === "key_id" && i.value === kid,
-        ),
+        g.principal.identifiers.some((i) => i.kind === "key_id" && i.value === kid),
       );
-      const resHit = (sa.resourceIds ?? []).includes(g.resource.id);
+      // A shared resource can have both a human collaborator and a service
+      // account deploy key. Resource ownership alone must not override an
+      // explicit human principal; use resource IDs only for non-human grants.
+      const resHit = g.principal.kind !== "human" && (sa.resourceIds ?? []).includes(g.resource.id);
       if (!keyHit && !resHit) continue;
       link(
         grantNode(g.id),
@@ -373,9 +371,7 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
     // Only use temporal for grants not yet linked to any seed
     for (const g of grants) {
       if (!g.createdAt) continue;
-      const already = seeds.some(
-        (s) => uf.find(grantNode(g.id)) === uf.find(seedNode(s.key)),
-      );
+      const already = seeds.some((s) => uf.find(grantNode(g.id)) === uf.find(seedNode(s.key)));
       if (already) continue;
       const delta = Math.abs(g.createdAt.getTime() - center);
       if (delta > windowDays * MS_PER_DAY) continue;
@@ -410,15 +406,11 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
   // Directory-anchored clusters
   for (const seed of seeds) {
     const root = uf.find(seedNode(seed.key));
-    const grantIds = grants
-      .map((g) => g.id)
-      .filter((gid) => uf.find(grantNode(gid)) === root);
+    const grantIds = grants.map((g) => g.id).filter((gid) => uf.find(grantNode(gid)) === root);
     if (grantIds.length === 0) continue;
     for (const gid of grantIds) assigned.add(gid);
 
-    const clusterEdges = edges.filter(
-      (e) => uf.find(e.a) === root && uf.find(e.b) === root,
-    );
+    const clusterEdges = edges.filter((e) => uf.find(e.a) === root && uf.find(e.b) === root);
     const confidence = clusterEdges.reduce<Confidence>(
       (acc, e) => weaker(acc, e.confidence),
       "certain",
@@ -460,15 +452,17 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
 
     const sample = byId.get(grantIds[0]!)!;
     const work = collectIdentifiers(sample).find((i) => i.kind === "work_email");
-    const kind =
-      sample.principal.kind === "service_account" ? "service_account" : "human";
+    const kind = sample.principal.kind === "service_account" ? "service_account" : "human";
     const displayName = work?.value ?? `Unresolved ${kind} cluster`;
     for (const gid of grantIds) assigned.add(gid);
     clusters.push({
       id: sha256Hex(`orphan-cluster:${grantIds.slice().sort().join(",")}`),
       kind,
       displayName,
-      identifiers: mergeIdentifiers([], grantIds.map((gid) => byId.get(gid)!)),
+      identifiers: mergeIdentifiers(
+        [],
+        grantIds.map((gid) => byId.get(gid)!),
+      ),
       grantIds: grantIds as GrantId[],
       confidence: "certain",
       reasoning: buildReasoning(displayName, groupEdges, grantIds.length),
@@ -525,11 +519,7 @@ function mergeIdentifiers(base: Identifier[], grants: Grant[]): Identifier[] {
   );
 }
 
-function buildReasoning(
-  displayName: string,
-  clusterEdges: Edge[],
-  grantCount: number,
-): string {
+function buildReasoning(displayName: string, clusterEdges: Edge[], grantCount: number): string {
   if (clusterEdges.length === 0) {
     return `Cluster for ${displayName} with ${grantCount} grant(s); no cross-link edges recorded.`;
   }
@@ -552,19 +542,14 @@ function buildReasoning(
     const key = `${e.signal}:${e.detail}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    steps.push(
-      `(${e.confidence}) ${signalLabel(e.signal)}: ${e.detail}`,
-    );
+    steps.push(`(${e.confidence}) ${signalLabel(e.signal)}: ${e.detail}`);
   }
   return (
-    `Attributed ${grantCount} grant(s) to ${displayName}. Inference chain: ` +
-    steps.join(" → ")
+    `Attributed ${grantCount} grant(s) to ${displayName}. Inference chain: ` + steps.join(" → ")
   );
 }
 
 /** JSON-friendly serialize (dates as ISO). */
-export function serializeReconciliationResult(
-  result: ReconciliationResult,
-): unknown {
+export function serializeReconciliationResult(result: ReconciliationResult): unknown {
   return result;
 }

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "ada-lovelace",
-  "recordedAt": "2026-08-25T01:07:25.009Z",
+  "recordedAt": "2026-08-30T04:08:07.420Z",
   "person": "Ada Lovelace",
   "scope": null,
   "driver": "record",
@@ -12,7 +12,7 @@
   "interactions": [
     {
       "kind": "model",
-      "at": "2026-08-25T01:07:24.828Z",
+      "at": "2026-08-30T04:08:06.970Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -22,17 +22,8 @@
       "outputSummary": "compact grants for aws"
     },
     {
-      "kind": "tool",
-      "at": "2026-08-25T01:07:24.829Z",
-      "tool": "inventory_system",
-      "arguments": {
-        "system_id": "aws"
-      },
-      "resultSummary": "1 grants"
-    },
-    {
       "kind": "model",
-      "at": "2026-08-25T01:07:24.829Z",
+      "at": "2026-08-30T04:08:06.971Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -42,17 +33,8 @@
       "outputSummary": "compact grants for github"
     },
     {
-      "kind": "tool",
-      "at": "2026-08-25T01:07:24.830Z",
-      "tool": "inventory_system",
-      "arguments": {
-        "system_id": "github"
-      },
-      "resultSummary": "4 grants"
-    },
-    {
       "kind": "model",
-      "at": "2026-08-25T01:07:24.830Z",
+      "at": "2026-08-30T04:08:06.971Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -62,17 +44,8 @@
       "outputSummary": "compact grants for google_workspace"
     },
     {
-      "kind": "tool",
-      "at": "2026-08-25T01:07:24.831Z",
-      "tool": "inventory_system",
-      "arguments": {
-        "system_id": "google_workspace"
-      },
-      "resultSummary": "6 grants"
-    },
-    {
       "kind": "model",
-      "at": "2026-08-25T01:07:24.831Z",
+      "at": "2026-08-30T04:08:06.971Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -82,17 +55,8 @@
       "outputSummary": "compact grants for notion"
     },
     {
-      "kind": "tool",
-      "at": "2026-08-25T01:07:24.832Z",
-      "tool": "inventory_system",
-      "arguments": {
-        "system_id": "notion"
-      },
-      "resultSummary": "1 grants"
-    },
-    {
       "kind": "model",
-      "at": "2026-08-25T01:07:24.832Z",
+      "at": "2026-08-30T04:08:06.971Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -103,7 +67,25 @@
     },
     {
       "kind": "tool",
-      "at": "2026-08-25T01:07:24.832Z",
+      "at": "2026-08-30T04:08:07.053Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "aws"
+      },
+      "resultSummary": "1 grants"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-30T04:08:07.133Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "notion"
+      },
+      "resultSummary": "1 grants"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-30T04:08:07.213Z",
       "tool": "inventory_system",
       "arguments": {
         "system_id": "slack"
@@ -111,8 +93,26 @@
       "resultSummary": "3 grants"
     },
     {
+      "kind": "tool",
+      "at": "2026-08-30T04:08:07.292Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "github"
+      },
+      "resultSummary": "4 grants"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-30T04:08:07.372Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "google_workspace"
+      },
+      "resultSummary": "6 grants"
+    },
+    {
       "kind": "model",
-      "at": "2026-08-25T01:07:24.832Z",
+      "at": "2026-08-30T04:08:07.372Z",
       "role": "reasoning",
       "model": "openai/gpt-4o",
       "inputTokens": 2500,
@@ -123,7 +123,7 @@
     },
     {
       "kind": "tool",
-      "at": "2026-08-25T01:07:24.835Z",
+      "at": "2026-08-30T04:08:07.385Z",
       "tool": "run_identity_reconciliation",
       "arguments": {
         "grant_ids": [
@@ -144,21 +144,56 @@
           "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
         ]
       },
-      "resultSummary": "3 clusters, 2 unknown"
+      "resultSummary": "4 clusters, 1 unknown"
     }
   ],
   "events": [
     {
-      "type": "subagent.started",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "type": "subagent.queued",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
       "systemId": "aws",
       "displayName": "AWS",
-      "at": "2026-08-25T01:07:24.827Z"
+      "at": "2026-08-30T04:08:06.970Z"
+    },
+    {
+      "type": "subagent.queued",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "github",
+      "displayName": "GitHub",
+      "at": "2026-08-30T04:08:06.970Z"
+    },
+    {
+      "type": "subagent.queued",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "google_workspace",
+      "displayName": "Google Workspace",
+      "at": "2026-08-30T04:08:06.970Z"
+    },
+    {
+      "type": "subagent.queued",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "notion",
+      "displayName": "Notion",
+      "at": "2026-08-30T04:08:06.970Z"
+    },
+    {
+      "type": "subagent.queued",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "slack",
+      "displayName": "Slack",
+      "at": "2026-08-30T04:08:06.970Z"
+    },
+    {
+      "type": "subagent.started",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "aws",
+      "displayName": "AWS",
+      "at": "2026-08-30T04:08:06.970Z"
     },
     {
       "type": "cost.update",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "at": "2026-08-25T01:07:24.828Z",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:06.970Z",
       "inputTokens": 800,
       "outputTokens": 200,
       "costUsd": 0.00024,
@@ -166,30 +201,16 @@
       "capped": false
     },
     {
-      "type": "subagent.progress",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "aws",
-      "found": 1,
-      "at": "2026-08-25T01:07:24.829Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "aws",
-      "found": 1,
-      "at": "2026-08-25T01:07:24.829Z"
-    },
-    {
       "type": "subagent.started",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
       "systemId": "github",
       "displayName": "GitHub",
-      "at": "2026-08-25T01:07:24.829Z"
+      "at": "2026-08-30T04:08:06.970Z"
     },
     {
       "type": "cost.update",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "at": "2026-08-25T01:07:24.829Z",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:06.971Z",
       "inputTokens": 1600,
       "outputTokens": 400,
       "costUsd": 0.00048,
@@ -197,30 +218,16 @@
       "capped": false
     },
     {
-      "type": "subagent.progress",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "github",
-      "found": 4,
-      "at": "2026-08-25T01:07:24.830Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "github",
-      "found": 4,
-      "at": "2026-08-25T01:07:24.830Z"
-    },
-    {
       "type": "subagent.started",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
       "systemId": "google_workspace",
       "displayName": "Google Workspace",
-      "at": "2026-08-25T01:07:24.830Z"
+      "at": "2026-08-30T04:08:06.971Z"
     },
     {
       "type": "cost.update",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "at": "2026-08-25T01:07:24.830Z",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:06.971Z",
       "inputTokens": 2400,
       "outputTokens": 600,
       "costUsd": 0.00072,
@@ -228,30 +235,16 @@
       "capped": false
     },
     {
-      "type": "subagent.progress",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "google_workspace",
-      "found": 6,
-      "at": "2026-08-25T01:07:24.831Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "google_workspace",
-      "found": 6,
-      "at": "2026-08-25T01:07:24.831Z"
-    },
-    {
       "type": "subagent.started",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
       "systemId": "notion",
       "displayName": "Notion",
-      "at": "2026-08-25T01:07:24.831Z"
+      "at": "2026-08-30T04:08:06.971Z"
     },
     {
       "type": "cost.update",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "at": "2026-08-25T01:07:24.831Z",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:06.971Z",
       "inputTokens": 3200,
       "outputTokens": 800,
       "costUsd": 0.00096,
@@ -259,30 +252,16 @@
       "capped": false
     },
     {
-      "type": "subagent.progress",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "notion",
-      "found": 1,
-      "at": "2026-08-25T01:07:24.832Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "notion",
-      "found": 1,
-      "at": "2026-08-25T01:07:24.832Z"
-    },
-    {
       "type": "subagent.started",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
       "systemId": "slack",
       "displayName": "Slack",
-      "at": "2026-08-25T01:07:24.832Z"
+      "at": "2026-08-30T04:08:06.971Z"
     },
     {
       "type": "cost.update",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "at": "2026-08-25T01:07:24.832Z",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:06.971Z",
       "inputTokens": 4000,
       "outputTokens": 1000,
       "costUsd": 0.0012,
@@ -291,27 +270,153 @@
     },
     {
       "type": "subagent.progress",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "systemId": "slack",
-      "found": 3,
-      "at": "2026-08-25T01:07:24.832Z"
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "aws",
+      "found": 1,
+      "at": "2026-08-30T04:08:07.053Z"
     },
     {
       "type": "subagent.done",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "aws",
+      "found": 1,
+      "at": "2026-08-30T04:08:07.053Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "notion",
+      "found": 1,
+      "at": "2026-08-30T04:08:07.132Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "notion",
+      "found": 1,
+      "at": "2026-08-30T04:08:07.133Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "slack",
+      "found": 1,
+      "at": "2026-08-30T04:08:07.213Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "slack",
+      "found": 2,
+      "at": "2026-08-30T04:08:07.213Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
       "systemId": "slack",
       "found": 3,
-      "at": "2026-08-25T01:07:24.832Z"
+      "at": "2026-08-30T04:08:07.213Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "slack",
+      "found": 3,
+      "at": "2026-08-30T04:08:07.213Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "github",
+      "found": 1,
+      "at": "2026-08-30T04:08:07.292Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "github",
+      "found": 2,
+      "at": "2026-08-30T04:08:07.292Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "github",
+      "found": 3,
+      "at": "2026-08-30T04:08:07.292Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "github",
+      "found": 4,
+      "at": "2026-08-30T04:08:07.292Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "github",
+      "found": 4,
+      "at": "2026-08-30T04:08:07.292Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "google_workspace",
+      "found": 1,
+      "at": "2026-08-30T04:08:07.372Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "google_workspace",
+      "found": 2,
+      "at": "2026-08-30T04:08:07.372Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "google_workspace",
+      "found": 3,
+      "at": "2026-08-30T04:08:07.372Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "google_workspace",
+      "found": 4,
+      "at": "2026-08-30T04:08:07.372Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "google_workspace",
+      "found": 5,
+      "at": "2026-08-30T04:08:07.372Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "google_workspace",
+      "found": 6,
+      "at": "2026-08-30T04:08:07.372Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "systemId": "google_workspace",
+      "found": 6,
+      "at": "2026-08-30T04:08:07.372Z"
     },
     {
       "type": "reconcile.started",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "at": "2026-08-25T01:07:24.832Z"
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:07.372Z"
     },
     {
       "type": "cost.update",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "at": "2026-08-25T01:07:24.832Z",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:07.372Z",
       "inputTokens": 6500,
       "outputTokens": 2200,
       "costUsd": 0.01945,
@@ -319,17 +424,28 @@
       "capped": false
     },
     {
+      "type": "scan.diff",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:07.391Z",
+      "baselineScanId": null,
+      "added": 15,
+      "removed": 0,
+      "changed": 0,
+      "unchanged": 0,
+      "diffOnly": false
+    },
+    {
       "type": "reconcile.done",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
-      "at": "2026-08-25T01:07:24.836Z",
-      "clusters": 3,
-      "unknown": 2
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "at": "2026-08-30T04:08:07.391Z",
+      "clusters": 4,
+      "unknown": 1
     },
     {
       "type": "cards.persisted",
-      "scanId": "c01f104c-765a-48be-8ccb-757c0c46c29a",
+      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
       "cardCount": 7,
-      "at": "2026-08-25T01:07:25.008Z"
+      "at": "2026-08-30T04:08:07.419Z"
     }
   ],
   "costs": {
@@ -340,7 +456,7 @@
     "capped": false,
     "lines": [
       {
-        "at": "2026-08-25T01:07:24.828Z",
+        "at": "2026-08-30T04:08:06.970Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -349,7 +465,7 @@
         "note": "inventory_system:aws"
       },
       {
-        "at": "2026-08-25T01:07:24.829Z",
+        "at": "2026-08-30T04:08:06.971Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -358,7 +474,7 @@
         "note": "inventory_system:github"
       },
       {
-        "at": "2026-08-25T01:07:24.830Z",
+        "at": "2026-08-30T04:08:06.971Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -367,7 +483,7 @@
         "note": "inventory_system:google_workspace"
       },
       {
-        "at": "2026-08-25T01:07:24.831Z",
+        "at": "2026-08-30T04:08:06.971Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -376,7 +492,7 @@
         "note": "inventory_system:notion"
       },
       {
-        "at": "2026-08-25T01:07:24.832Z",
+        "at": "2026-08-30T04:08:06.971Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -385,7 +501,7 @@
         "note": "inventory_system:slack"
       },
       {
-        "at": "2026-08-25T01:07:24.832Z",
+        "at": "2026-08-30T04:08:07.372Z",
         "role": "reasoning",
         "model": "openai/gpt-4o",
         "inputTokens": 2500,
@@ -397,7 +513,7 @@
   },
   "cards": [
     {
-      "id": "a4ce24e16865f17028e4609d77739286cced8d6430a98a5da2aeff4709a119a7",
+      "id": "c0d7b5558b61727b2a5e83a21bf42a7c748debb12667919da2d36aa2bb6280bd",
       "status": "pending",
       "proposedAction": {
         "kind": "flag_only",
@@ -415,12 +531,12 @@
       },
       "attribution": {
         "confidence": "speculative",
-        "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+        "reasoning": "1 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
       },
       "grantId": "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2"
     },
     {
-      "id": "fd28c67e0c673b61c91d217625b04f00fb5bf8f75a9b9cf1be401acad406d068",
+      "id": "3fa529c035e9627372e823bd4cf18ac65fc1a617e39a37304aaa1a90847c2e0e",
       "status": "held",
       "proposedAction": {
         "kind": "flag_only",
@@ -428,22 +544,23 @@
       },
       "irreversible": true,
       "risk": {
-        "score": 100,
+        "score": 95,
         "reasons": [
           "capability admin (+55)",
           "lastUsedAt unknown — cannot confirm recent use (+20)",
           "revocation is irreversible (+15)",
-          "principal unresolved (kind=unknown) (+25)"
+          "principal resolved as service_account (probable) (+5)"
         ]
       },
       "attribution": {
-        "confidence": "speculative",
-        "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+        "resolvedTo": "816b6fbf714996a70e3b1a74b5c1516df514d8f6494599822240d74cddee309f",
+        "confidence": "probable",
+        "reasoning": "Attributed 1 grant(s) to GitHub Actions — payments CDN publish. Inference chain: (probable) key/token creation attributed to a resolved principal: Key AKIA_KEYRING_CI_ORPHAN_LOOKALIKE attributed to ci-payments-cdn via keyring.yml:service_accounts/ci-payments-cdn → (certain) key/token creation attributed to a resolved principal: Declared service account \"GitHub Actions — payments CDN publish\" (owner platform@keyring-test.example) in keyring.yml"
       },
       "grantId": "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86"
     },
     {
-      "id": "70fed690c82c6bc3c4be9df3b8b6e0f191d93b0cd62b30ab317bfc0490bdff59",
+      "id": "d05255b11419080417f566350ae3e7adb6640df7e91ac4a964b51b2109d68d97",
       "status": "pending",
       "proposedAction": {
         "kind": "revoke",
@@ -451,12 +568,12 @@
       },
       "irreversible": false,
       "risk": {
-        "score": 75,
+        "score": 80,
         "reasons": [
           "capability admin (+55)",
-          "last used 192 days ago — stale (+20)",
+          "last used 197 days ago — stale (≥90d) (+20)",
           "revocation possible via admin.conversations.remove (+0)",
-          "principal resolved as human (+0)"
+          "principal resolved as human (probable) (+5)"
         ]
       },
       "attribution": {
@@ -467,7 +584,7 @@
       "grantId": "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
     },
     {
-      "id": "2fdcefdc98f7683e807060330d5e2c551f4cfbf9f64fab688987eef8b50fcca7",
+      "id": "c5aad7944c4ac3aba896d8d9a0229ca3705474d08694614a9e7b6a1c2646acd0",
       "status": "pending",
       "proposedAction": {
         "kind": "downgrade",
@@ -475,12 +592,12 @@
       },
       "irreversible": false,
       "risk": {
-        "score": 40,
+        "score": 45,
         "reasons": [
           "capability read (+10)",
-          "last used 542 days ago — highly stale (+30)",
+          "last used 547 days ago — highly stale (≥365d) (+30)",
           "revocation possible via drive.permissions.delete (+0)",
-          "principal resolved as human (+0)"
+          "principal resolved as human (probable) (+5)"
         ]
       },
       "attribution": {
@@ -491,7 +608,7 @@
       "grantId": "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6"
     },
     {
-      "id": "941468f73b64efd68fa1cc686277b650d1ad9ceb584620061737284318e04d0f",
+      "id": "deb48fb41f35ecb6862301bcb809faf1e8388c81d0ab27a1b7950df8d2cbd677",
       "status": "pending",
       "proposedAction": {
         "kind": "downgrade",
@@ -499,12 +616,12 @@
       },
       "irreversible": false,
       "risk": {
-        "score": 40,
+        "score": 45,
         "reasons": [
           "capability write (+30)",
-          "last used 41 days ago — cooling (+10)",
+          "last used 46 days ago — cooling (≥14d) (+10)",
           "revocation possible via remove_collaborator (+0)",
-          "principal resolved as human (+0)"
+          "principal resolved as human (probable) (+5)"
         ]
       },
       "attribution": {
@@ -515,7 +632,7 @@
       "grantId": "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c"
     },
     {
-      "id": "9f7fa8a7929c33f27104bb1798e9066ba49b08b381f96550194569d21569a589",
+      "id": "ace5381d3f0e31dfda01909f10571d2856501a59087762d2f15d57ae48809a70",
       "status": "pending",
       "proposedAction": {
         "kind": "downgrade",
@@ -523,12 +640,12 @@
       },
       "irreversible": false,
       "risk": {
-        "score": 30,
+        "score": 35,
         "reasons": [
           "capability write (+30)",
-          "last used 5 days ago — recent (+0)",
+          "last used 10 days ago — recent (+0)",
           "revocation possible via drive.permissions.delete (+0)",
-          "principal resolved as human (+0)"
+          "principal resolved as human (probable) (+5)"
         ]
       },
       "attribution": {
@@ -539,7 +656,7 @@
       "grantId": "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344"
     },
     {
-      "id": "ec10165cab137035be4034fd29c647e5ca4a6a3bc2ca0476b867ce77c07f219c",
+      "id": "a86f2b2c33628533c07c645e1fd02060e88997f0e68bf8d0e213e287db0e0def",
       "status": "pending",
       "proposedAction": {
         "kind": "downgrade",
@@ -547,12 +664,12 @@
       },
       "irreversible": false,
       "risk": {
-        "score": 30,
+        "score": 35,
         "reasons": [
           "capability write (+30)",
-          "last used 3 days ago — recent (+0)",
+          "last used 8 days ago — recent (+0)",
           "revocation possible via conversations.kick (+0)",
-          "principal resolved as human (+0)"
+          "principal resolved as human (probable) (+5)"
         ]
       },
       "attribution": {
@@ -634,6 +751,22 @@
         "reasoning": "Attributed 4 grant(s) to Alan Turing. Inference chain: (certain) exact work-email match: Both grants carry work email alan@keyring-test.example → (certain) exact work-email match: Grant work email alan@keyring-test.example matches directory for Alan Turing → (certain) personal email present on the org directory record: Personal email enigmamachine88@gmail.com is listed on the directory record for Alan Turing → (certain) username listed on the org directory record: Username bombe-ops is listed on the directory record for Alan Turing"
       },
       {
+        "id": "f0e94a3325940b70c72a5884b4aef6ce8dd30d6ba1ab2731fe8e0040ff352922",
+        "kind": "service_account",
+        "displayName": "GitHub Actions — payments CDN publish",
+        "personId": "816b6fbf714996a70e3b1a74b5c1516df514d8f6494599822240d74cddee309f",
+        "identifiers": [
+          {
+            "kind": "key_id",
+            "value": "AKIA_KEYRING_CI_ORPHAN_LOOKALIKE",
+            "source": "github_deploy_keys"
+          }
+        ],
+        "grantIds": ["e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86"],
+        "confidence": "probable",
+        "reasoning": "Attributed 1 grant(s) to GitHub Actions — payments CDN publish. Inference chain: (probable) key/token creation attributed to a resolved principal: Key AKIA_KEYRING_CI_ORPHAN_LOOKALIKE attributed to ci-payments-cdn via keyring.yml:service_accounts/ci-payments-cdn → (certain) key/token creation attributed to a resolved principal: Declared service account \"GitHub Actions — payments CDN publish\" (owner platform@keyring-test.example) in keyring.yml"
+      },
+      {
         "id": "edcf420a53cf8e754f10e1f31e118925e4769ee7694b142c8387fa004cbbe538",
         "kind": "human",
         "displayName": "Grace Hopper",
@@ -666,11 +799,8 @@
       }
     ],
     "unknown": {
-      "grantIds": [
-        "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2",
-        "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86"
-      ],
-      "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+      "grantIds": ["8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2"],
+      "reasoning": "1 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
     }
   },
   "grantIds": [

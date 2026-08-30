@@ -70,14 +70,25 @@ describe("record → replay (offline)", () => {
     const recording = await loadRecording(recordingId);
     expect(recording.id).toBe(recordingId);
     expect(recording.cards.length).toBeGreaterThan(0);
+    expect(recording.cards.length).toBeLessThanOrEqual(8);
+    const systemIds = ["aws", "github", "google_workspace", "notion", "slack"];
+    const subagentEvents = recording.events.filter((event) => event.type.startsWith("subagent."));
+    expect(new Set(subagentEvents.map((event) => String(event.systemId)))).toEqual(
+      new Set(systemIds),
+    );
+    expect(subagentEvents.filter((event) => event.type === "subagent.queued")).toHaveLength(5);
+    expect(subagentEvents.filter((event) => event.type === "subagent.done")).toHaveLength(5);
+    expect(
+      new Set(
+        subagentEvents.filter((event) => event.type === "subagent.done").map((event) => event.at),
+      ).size,
+    ).toBeGreaterThan(1);
 
     const cardsAfterRecord = await app.inject({
       method: "GET",
       url: `/scans/${scanId}/cards`,
     });
-    const recordedCount = (
-      cardsAfterRecord.json() as { cards: unknown[] }
-    ).cards.length;
+    const recordedCount = (cardsAfterRecord.json() as { cards: unknown[] }).cards.length;
 
     const replay = await app.inject({
       method: "POST",
@@ -110,8 +121,6 @@ describe("record → replay (offline)", () => {
       method: "GET",
       url: `/scans/${replayId}/cards`,
     });
-    expect((replayCards.json() as { cards: unknown[] }).cards.length).toBe(
-      recordedCount,
-    );
+    expect((replayCards.json() as { cards: unknown[] }).cards.length).toBe(recordedCount);
   }, 60_000);
 });

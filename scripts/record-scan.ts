@@ -12,14 +12,14 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { createDb } from "../packages/server/src/db/client.js";
+import { createDb, type Database } from "../packages/server/src/db/client.js";
 import { runMigrations } from "../packages/server/src/db/migrate.js";
+import { openTestDatabase } from "../packages/server/src/db/test-db.js";
 import { loadRecording, recordingsDir } from "../packages/server/src/recording/store.js";
 import { createStandaloneApp } from "../packages/server/src/standalone.js";
 
 const databaseUrl =
-  process.env.DATABASE_URL ??
-  "postgresql://keyring:keyring@localhost:5432/keyring";
+  process.env.DATABASE_URL ?? "postgresql://keyring:keyring@localhost:5432/keyring";
 
 const replayOnly = process.argv.includes("--replay-only");
 const person = process.env.KEYRING_RECORD_PERSON ?? "Ada Lovelace";
@@ -41,11 +41,7 @@ async function waitForScan(
       costs: unknown;
       recordingId: unknown;
     };
-    if (
-      body.status === "completed" ||
-      body.status === "failed" ||
-      body.status === "cost_capped"
-    ) {
+    if (body.status === "completed" || body.status === "failed" || body.status === "cost_capped") {
       return body;
     }
     await new Promise((r) => setTimeout(r, 100));
@@ -54,8 +50,24 @@ async function waitForScan(
 }
 
 async function main() {
-  await runMigrations(databaseUrl);
-  const { db, client } = createDb(databaseUrl);
+  const usePglite =
+    process.env.KEYRING_DEMO === "1" ||
+    process.env.KEYRING_PGLITE === "1" ||
+    !process.env.DATABASE_URL;
+  let db: Database["db"];
+  let closeDb: () => Promise<void>;
+  if (usePglite) {
+    const database = await openTestDatabase("recording-script");
+    db = database.db;
+    closeDb = database.close;
+  } else {
+    await runMigrations(databaseUrl);
+    const postgresDb = createDb(databaseUrl);
+    db = postgresDb.db;
+    closeDb = async () => {
+      await postgresDb.client.end({ timeout: 5 });
+    };
+  }
   const app = createStandaloneApp({ db });
 
   try {
@@ -114,7 +126,7 @@ async function main() {
     console.log("OK — record + replay identical offline path.");
   } finally {
     await app.close();
-    await client.end({ timeout: 5 });
+    await closeDb();
   }
 }
 
