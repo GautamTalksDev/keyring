@@ -4,6 +4,8 @@ import type { ApiCard } from "../api/types.js";
 import {
   countScanSummary,
   isUnattributed,
+  isUnregisteredAgent,
+  queueSections,
   scanSummaryText,
   sortCards,
   staleness,
@@ -140,28 +142,147 @@ describe("format helpers", () => {
     expect(scanSummaryText(counts)).toContain("1 human identity and 1 AI agent identity");
   });
 
-  it("counts unmatched AI agents as unregistered", () => {
+  it("does not label a declared agent as unregistered when attribution is unresolved", () => {
+    const declaredUnresolved = card({
+      id: "declared-unresolved",
+      attribution: {
+        confidence: "speculative",
+        reasoning: "Reconciliation could not resolve this declared agent.",
+      },
+      grant: {
+        ...card({ id: "declared-unresolved-base" }).grant,
+        principal: {
+          kind: "ai_agent",
+          agentName: "Declared Deployment Agent",
+          declarationStatus: "declared",
+          identifiers: [{ kind: "agent_id", value: "declared-1", source: "trueforge" }],
+        },
+      },
+    });
+
+    expect(isUnregisteredAgent(declaredUnresolved)).toBe(false);
+    expect(isUnattributed(declaredUnresolved)).toBe(true);
+
+    const counts = countScanSummary([declaredUnresolved], ["agent_identity"]);
+    expect(counts.agentIdentities).toBe(1);
+    expect(counts.unregisteredAgents).toBe(0);
+    expect(scanSummaryText(counts)).not.toContain("unregistered agent");
+  });
+
+  it("counts agents whose declarationStatus is unregistered", () => {
     const rogue = card({
       id: "rogue",
       attribution: {
         confidence: "certain",
         reasoning: "Agent discovered without a policy match.",
+        resolvedTo: "owner-1",
       },
       grant: {
         ...card({ id: "rogue-base" }).grant,
         principal: {
           kind: "ai_agent",
           agentName: "Unregistered Deployment Agent",
-          declarationStatus: "declared",
+          declarationStatus: "unregistered",
           identifiers: [{ kind: "agent_id", value: "rogue", source: "fixture" }],
         },
       },
     });
 
-    const counts = countScanSummary([rogue], ["agent_identity"]);
+    expect(isUnregisteredAgent(rogue)).toBe(true);
 
+    const counts = countScanSummary([rogue], ["agent_identity"]);
     expect(counts.agentIdentities).toBe(1);
     expect(counts.unregisteredAgents).toBe(1);
     expect(scanSummaryText(counts)).toContain("1 unregistered agent.");
+  });
+
+  it("flattens queue sections in visual order for navigation", () => {
+    const unattributedHuman = card({
+      id: "unattributed-human",
+      risk: { score: 10, reasons: [] },
+      attribution: { confidence: "speculative", reasoning: "unknown bucket" },
+      grant: {
+        ...card({ id: "unattributed-human-base" }).grant,
+        principal: { kind: "unknown", identifiers: [] },
+      },
+    });
+    const agent = card({
+      id: "agent",
+      risk: { score: 5, reasons: [] },
+      attribution: {
+        confidence: "certain",
+        reasoning: "TrueForge registration",
+        resolvedTo: "agent-1",
+      },
+      grant: {
+        ...card({ id: "agent-base" }).grant,
+        principal: {
+          kind: "ai_agent",
+          agentName: "Keyring",
+          declarationStatus: "declared",
+          identifiers: [{ kind: "agent_id", value: "keyring-self", source: "trueforge" }],
+        },
+      },
+    });
+    const attributedHuman = card({
+      id: "attributed-human",
+      risk: { score: 90, reasons: [] },
+    });
+
+    const sorted = sortCards([attributedHuman, agent, unattributedHuman]).map((c) => c.id);
+    expect(sorted).toEqual(["unattributed-human", "attributed-human", "agent"]);
+
+    const sections = queueSections([attributedHuman, agent, unattributedHuman]);
+    expect(sections.visualOrder.map((c) => c.id)).toEqual([
+      "unattributed-human",
+      "agent",
+      "attributed-human",
+    ]);
+    expect(sections.agents).toHaveLength(1);
+    expect(sections.agents.map((c) => c.id)).toEqual(["agent"]);
+  });
+
+  it("counts one queue row per agent grant, not per unique identity", () => {
+    const first = card({
+      id: "agent-grant-1",
+      attribution: {
+        confidence: "certain",
+        reasoning: "TrueForge registration",
+        resolvedTo: "agent-1",
+      },
+      grant: {
+        ...card({ id: "agent-grant-1-base" }).grant,
+        principal: {
+          kind: "ai_agent",
+          agentName: "Keyring",
+          declarationStatus: "declared",
+          identifiers: [{ kind: "agent_id", value: "keyring-self", source: "trueforge" }],
+        },
+      },
+    });
+    const second = card({
+      id: "agent-grant-2",
+      attribution: {
+        confidence: "certain",
+        reasoning: "TrueForge registration",
+        resolvedTo: "agent-1",
+      },
+      grant: {
+        ...card({ id: "agent-grant-2-base" }).grant,
+        system: "github",
+        principal: {
+          kind: "ai_agent",
+          agentName: "Keyring",
+          declarationStatus: "declared",
+          identifiers: [{ kind: "agent_id", value: "keyring-self", source: "trueforge" }],
+        },
+      },
+    });
+
+    const sections = queueSections([first, second]);
+    const counts = countScanSummary([first, second], ["agent_identity", "github"]);
+
+    expect(counts.agentIdentities).toBe(1);
+    expect(sections.agents).toHaveLength(2);
   });
 });

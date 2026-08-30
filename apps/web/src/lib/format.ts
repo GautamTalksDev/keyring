@@ -91,7 +91,10 @@ export function isUnattributed(card: ApiCard): boolean {
 }
 
 export function isUnregisteredAgent(card: ApiCard): boolean {
-  return card.grant.principal.kind === "ai_agent" && card.attribution.resolvedTo === undefined;
+  return (
+    card.grant.principal.kind === "ai_agent" &&
+    card.grant.principal.declarationStatus === "unregistered"
+  );
 }
 
 export function formatWhen(iso: string | null | undefined): string {
@@ -167,4 +170,29 @@ export function sortCards(cards: ApiCard[]): ApiCard[] {
     if (ua !== ub) return ua - ub;
     return b.risk.score - a.risk.score;
   });
+}
+
+export interface QueueSections {
+  unattributed: ApiCard[];
+  agents: ApiCard[];
+  attributed: ApiCard[];
+  visualOrder: ApiCard[];
+}
+
+/** Section order the queue renders: unattributed, agents, attributed. */
+export function queueSections(cards: ApiCard[]): QueueSections {
+  const ordered = sortCards(cards);
+  const unattributed = ordered.filter(
+    (card) => card.grant.principal.kind !== "ai_agent" && isUnattributed(card),
+  );
+  const agents = ordered.filter((card) => card.grant.principal.kind === "ai_agent");
+  const attributed = ordered.filter(
+    (card) => card.grant.principal.kind !== "ai_agent" && !isUnattributed(card),
+  );
+  return {
+    unattributed,
+    agents,
+    attributed,
+    visualOrder: [...unattributed, ...agents, ...attributed],
+  };
 }

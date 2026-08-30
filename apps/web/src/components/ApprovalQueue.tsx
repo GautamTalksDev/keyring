@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { postDecision } from "../api/client.js";
 import type { ApiCard } from "../api/types.js";
-import { countScanSummary, isUnattributed, scanSummaryText, sortCards } from "../lib/format.js";
+import { countScanSummary, queueSections, scanSummaryText } from "../lib/format.js";
 import { ApprovalCardView } from "./ApprovalCardView.js";
 import { ExecutePanel } from "./ExecutePanel.js";
 import { HoldDialog } from "./HoldDialog.js";
@@ -46,14 +46,12 @@ export function ApprovalQueue({
   guidedMode?: boolean;
   guidedCardId?: string | null;
 }) {
-  const ordered = useMemo(() => sortCards(cards), [cards]);
-  const agents = ordered.filter((card) => card.grant.principal.kind === "ai_agent");
-  const unattributed = ordered.filter(
-    (card) => card.grant.principal.kind !== "ai_agent" && isUnattributed(card),
-  );
-  const attributed = ordered.filter(
-    (card) => card.grant.principal.kind !== "ai_agent" && !isUnattributed(card),
-  );
+  const {
+    unattributed,
+    agents,
+    attributed,
+    visualOrder: ordered,
+  } = useMemo(() => queueSections(cards), [cards]);
 
   const [focusIndex, setFocusIndex] = useState(0);
   const [checked, setChecked] = useState<Set<string>>(new Set());
@@ -346,7 +344,7 @@ export function ApprovalQueue({
                   title="AI agents"
                   subtitle="Non-human identities found in connected systems, including Keyring self-inventory."
                   tone="agent"
-                  count={summary.agentIdentities}
+                  count={agents.length}
                 />
                 <div className="mt-3 space-y-2" role="list">
                   {agents.map((card) => (
