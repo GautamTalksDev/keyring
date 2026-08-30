@@ -1,6 +1,22 @@
-import type { ApiCard, ExecuteResult, ScanCostSnapshot, ScanProgressEvent } from "./types.js";
+import type {
+  ApiCard,
+  AuditRecord,
+  AuditVerification,
+  ExecuteResult,
+  ScanCostSnapshot,
+  ScanProgressEvent,
+} from "./types.js";
 
 const base = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+
+export interface ExecuteResponse {
+  scanId: string;
+  dryRun: boolean;
+  executed: number;
+  failed: number;
+  skipped: number;
+  results: ExecuteResult[];
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${base}${path}`, {
@@ -75,18 +91,72 @@ export async function executeScan(
   scanId: string,
   approvedBy = "operator",
   dryRun = true,
-): Promise<{
-  scanId: string;
-  dryRun: boolean;
-  executed: number;
-  failed: number;
-  skipped: number;
-  results: ExecuteResult[];
-}> {
+): Promise<ExecuteResponse> {
   return request(`/scans/${scanId}/execute`, {
     method: "POST",
     body: JSON.stringify({ approvedBy, dryRun }),
   });
+}
+
+export async function executeScanStream(
+  scanId: string,
+  approvedBy = "operator",
+  dryRun = true,
+  signal?: AbortSignal,
+  onEvent?: (event: ScanProgressEvent) => void | Promise<void>,
+): Promise<ExecuteResponse> {
+  const res = await fetch(`${base}/scans/${scanId}/execute`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      accept: "text/event-stream",
+    },
+    body: JSON.stringify({ approvedBy, dryRun }),
+    signal,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${res.status} /scans/${scanId}/execute: ${text}`);
+  }
+  if (!res.body) throw new Error("Execute stream returned no body.");
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let summary: ExecuteResponse | null = null;
+
+  const consume = async (chunk: string) => {
+    buffer += chunk;
+    const frames = buffer.split(/\r?\n\r?\n/);
+    buffer = frames.pop() ?? "";
+    for (const frame of frames) {
+      const eventName = frame.match(/^event: (.+)$/m)?.[1] ?? "message";
+      const data = frame.match(/^data: (.+)$/m)?.[1];
+      if (!data) continue;
+      const event = JSON.parse(data) as ScanProgressEvent;
+      if (eventName === "execute.done") {
+        summary = event as unknown as ExecuteResponse;
+      } else {
+        await onEvent?.({ ...event, type: event.type || eventName });
+      }
+    }
+  };
+
+  while (true) {
+    const next = await reader.read();
+    if (next.done) break;
+    await consume(decoder.decode(next.value, { stream: true }));
+  }
+  await consume(decoder.decode());
+  if (!summary) throw new Error("Execute stream ended before execute.done.");
+  return summary;
+}
+
+export async function fetchAudit(): Promise<{
+  records: AuditRecord[];
+  verification: AuditVerification;
+}> {
+  return request("/audit");
 }
 
 /**

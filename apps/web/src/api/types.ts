@@ -90,3 +90,23 @@ export interface ExecuteResult {
     params: Record<string, unknown>;
   };
 }
+
+export interface AuditRecord {
+  id: string;
+  cardId: string;
+  action: string;
+  approvedBy: string;
+  approvedAt: string;
+  executedAt: string;
+  result: "success" | "failed" | "partial";
+  error?: string | null;
+  prevHash: string;
+  hash: string;
+}
+
+export interface AuditVerification {
+  ok: boolean;
+  count: number;
+  index?: number;
+  reason?: string;
+}

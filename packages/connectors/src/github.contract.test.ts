@@ -34,11 +34,9 @@ describe("GitHubConnector contract (MCP fixtures)", () => {
     }
 
     expect(grants.length).toBeGreaterThanOrEqual(4);
-    expect(
-      grants.every((g) =>
-        g.evidence.every((e) => e.source.startsWith("mcp:github/")),
-      ),
-    ).toBe(true);
+    expect(grants.every((g) => g.evidence.every((e) => e.source.startsWith("mcp:github/")))).toBe(
+      true,
+    );
 
     const byRepo = grants.filter((g) => g.resource.kind === "repo");
     const logins = byRepo.flatMap((g) =>
@@ -102,5 +100,54 @@ describe("GitHubConnector contract (MCP fixtures)", () => {
       );
       expect(match, `missing fixture grant ${resourceId} / ${key}`).toBeDefined();
     }
+  });
+
+  it("represents pending invitations separately from active collaborators", async () => {
+    const fixture = createFixtureMcpToolCaller();
+    const connector = createGitHubConnector({
+      org: "keyring-test",
+      discoveredAt: DISCOVERED_AT,
+    });
+    const grants = [];
+    const invitationCalls: string[] = [];
+    for await (const grant of connector.inventory({
+      credentials: { kind: "read", token: "t" },
+      mcp: {
+        async callTool(request) {
+          if (request.tool === "list_repository_invitations") {
+            invitationCalls.push(String(request.arguments?.repo));
+            return {
+              server: request.server,
+              tool: request.tool,
+              data:
+                request.arguments?.repo === "payments"
+                  ? [
+                      {
+                        id: 42,
+                        invitee: { login: "pending-user" },
+                        permissions: { push: true },
+                      },
+                    ]
+                  : [],
+            };
+          }
+          return fixture.callTool(request);
+        },
+      },
+    })) {
+      grants.push(grant);
+    }
+
+    expect(invitationCalls).toContain("payments");
+    const invitation = grants.find((grant) => grant.accessState === "pending_invitation");
+    expect(invitation).toMatchObject({
+      accessState: "pending_invitation",
+      resource: {
+        id: "keyring-test/payments/invitation:42",
+      },
+      revocable: {
+        method: "delete_repository_invitation",
+      },
+    });
   });
 });

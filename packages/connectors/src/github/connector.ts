@@ -1,8 +1,4 @@
-import {
-  createGrant,
-  type Grant,
-  type Identifier,
-} from "@keyring/core";
+import { createGrant, type Grant, type Identifier } from "@keyring/core";
 
 import { asArray, asObject, callJson, paginatePages } from "../mcp/paginate.js";
 import { McpToolError, type McpToolCaller } from "../mcp/types.js";
@@ -13,11 +9,7 @@ import type {
   RevokeContext,
   RevokeResult,
 } from "../types.js";
-import {
-  GITHUB_MCP_SERVER,
-  GitHubMcpTools,
-  githubPermissionToCapability,
-} from "./tools.js";
+import { GITHUB_MCP_SERVER, GitHubMcpTools, githubPermissionToCapability } from "./tools.js";
 import {
   buildUndoHint,
   githubCapabilityToPermission,
@@ -79,8 +71,7 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
           );
           const body = asObject(result.data);
           const items = asArray(body, "items").map((r) => asObject(r));
-          const nextPage =
-            items.length === 100 ? page + 1 : undefined;
+          const nextPage = items.length === 100 ? page + 1 : undefined;
           return {
             items: items.map((r) => ({
               name: String(r.name ?? ""),
@@ -143,9 +134,7 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
             system: "github",
             principal: {
               kind: "human",
-              identifiers: [
-                { kind: "username", value: login, source: "github" },
-              ],
+              identifiers: [{ kind: "username", value: login, source: "github" }],
             },
             resource: {
               id: `${org}/team:${slug}`,
@@ -198,14 +187,10 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
             { signal: ctx.signal, maxPages: 5 },
           )) {
             const authorLogin = String(
-              asObject(commit.author).login ??
-                asObject(asObject(commit.commit).author).login ??
-                "",
+              asObject(commit.author).login ?? asObject(asObject(commit.commit).author).login ?? "",
             );
             const email = String(
-              asObject(asObject(commit.commit).author).email ??
-                asObject(commit.commit).email ??
-                "",
+              asObject(asObject(commit.commit).author).email ?? asObject(commit.commit).email ?? "",
             );
             if (authorLogin && email && !email.includes("noreply.github.com")) {
               const set = commitEmails.get(authorLogin) ?? new Set<string>();
@@ -288,16 +273,99 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
               evidence: [
                 {
                   claim: `GitHub collaborator ${login} has ${permission} on ${org}/${repoName} (affiliation=${affiliation})`,
-                  source: evidenceSource(
-                    server,
-                    GitHubMcpTools.listRepositoryCollaborators,
-                  ),
+                  source: evidenceSource(server, GitHubMcpTools.listRepositoryCollaborators),
                   confidence: "certain",
                   raw: collab,
                 },
               ],
             });
           }
+        }
+
+        // --- Pending repository invitations ---
+        // GitHub returns 201 when PUT /collaborators creates an invitation.
+        // Invitations are not collaborators until accepted, so inventory them
+        // separately and retain the invitation id for the correct revoke API.
+        try {
+          for await (const invitation of paginatePages(
+            async (page) => {
+              const result = await callJson(
+                mcp,
+                server,
+                GitHubMcpTools.listRepositoryInvitations,
+                { owner, repo: repoName, page, perPage: 100 },
+                ctx.signal,
+              );
+              const body = asObject(result.data);
+              const invitations = (
+                asArray(body, "invitations").length
+                  ? asArray(body, "invitations")
+                  : asArray(body, "items").length
+                    ? asArray(body, "items")
+                    : asArray(result.data)
+              ).map(asObject);
+              return {
+                items: invitations,
+                nextPage:
+                  typeof body.nextPage === "number"
+                    ? body.nextPage
+                    : invitations.length === 100
+                      ? page + 1
+                      : undefined,
+              };
+            },
+            { signal: ctx.signal },
+          )) {
+            const invitationId = String(invitation.id ?? invitation.invitation_id ?? "");
+            if (!invitationId) continue;
+            const invitee = asObject(invitation.invitee);
+            const login = String(invitation.login ?? invitee.login ?? "");
+            const email = String(invitation.email ?? invitee.email ?? "");
+            const identifiers: Identifier[] = login
+              ? [{ kind: "username", value: login, source: "github" }]
+              : email
+                ? [{ kind: "personal_email", value: email, source: "github" }]
+                : [];
+            if (identifiers.length === 0) continue;
+            const permission = String(
+              invitation.role_name ??
+                invitation.permission ??
+                (asObject(invitation.permissions).admin ? "admin" : "pull"),
+            );
+            yield createGrant({
+              system: "github",
+              principal: { kind: "human", identifiers },
+              resource: {
+                id: `${org}/${repoName}/invitation:${invitationId}`,
+                displayName: repoName,
+                kind: "repo",
+              },
+              capability: githubPermissionToCapability(permission),
+              accessState: "pending_invitation",
+              discoveredAt,
+              createdAt: invitation.created_at
+                ? new Date(String(invitation.created_at))
+                : undefined,
+              revocable: {
+                possible: true,
+                reversible: true,
+                method: "delete_repository_invitation",
+              },
+              evidence: [
+                {
+                  claim: `GitHub pending invitation for ${login || email} on ${org}/${repoName} (permission=${permission})`,
+                  source: evidenceSource(server, GitHubMcpTools.listRepositoryInvitations),
+                  confidence: "certain",
+                  raw: invitation,
+                },
+              ],
+            });
+          }
+        } catch (error) {
+          // The shipped GitHub MCP may not expose invitations yet. Keep the
+          // existing collaborator inventory usable when this optional tool is
+          // unavailable.
+          if (!(error instanceof McpToolError)) throw error;
         }
 
         // --- Deploy keys (optional tool) ---
@@ -401,9 +469,7 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
             },
             capability: "admin",
             discoveredAt,
-            lastUsedAt: pat.last_used_at
-              ? new Date(String(pat.last_used_at))
-              : undefined,
+            lastUsedAt: pat.last_used_at ? new Date(String(pat.last_used_at)) : undefined,
             revocable: {
               possible: true,
               reversible: false,
@@ -448,9 +514,7 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
         if (!login || !teamOrg || !teamSlug) {
           return { ok: false, error: "team revoke requires username + org/team slug" };
         }
-        const permission = String(
-          grant.capability === "admin" ? "maintainer" : "member",
-        );
+        const permission = String(grant.capability === "admin" ? "maintainer" : "member");
         const undoHint = buildUndoHint({
           system: "github",
           permission,
@@ -506,6 +570,73 @@ export function createGitHubConnector(options: GitHubConnectorOptions): Connecto
           error:
             "PAT revoke is not supported via MCP — revoke the token in GitHub settings (permanent)",
         };
+      }
+
+      // --- Pending repository invitation ---
+      const invitationMatch = resourceId.match(/^([^/]+)\/([^/]+)\/invitation:(.+)$/);
+      if (
+        invitationMatch ||
+        grant.accessState === "pending_invitation" ||
+        grant.revocable.method === "delete_repository_invitation"
+      ) {
+        const [, invitationOwner, invitationRepo, invitationId] = invitationMatch ?? [];
+        if (!invitationOwner || !invitationRepo || !invitationId) {
+          return {
+            ok: false,
+            error: "invitation revoke requires owner/repo/invitation resource id",
+          };
+        }
+        const permission = githubCapabilityToPermission(grant.capability);
+        const undoHint = buildUndoHint({
+          system: "github",
+          permission,
+          restoreMethod: "add_repository_collaborator",
+          params: {
+            owner: invitationOwner,
+            repo: invitationRepo,
+            username: login,
+            permission,
+          },
+        });
+        if (ctx.dryRun) {
+          return {
+            ok: true,
+            detail: `dry_run: would delete pending invitation ${invitationId} from ${invitationOwner}/${invitationRepo}`,
+            undoHint,
+          };
+        }
+        const mcp = requireMcp(ctx);
+        try {
+          await callJson(
+            mcp,
+            server,
+            GitHubMcpTools.deleteRepositoryInvitation,
+            {
+              owner: invitationOwner,
+              repo: invitationRepo,
+              invitation_id: invitationId,
+            },
+            ctx.signal,
+          );
+          return {
+            ok: true,
+            detail: `deleted pending invitation ${invitationId} from ${invitationOwner}/${invitationRepo} (approval ${ctx.approvalCardId})`,
+            undoHint,
+          };
+        } catch (error) {
+          if (isAlreadyAbsentError(error)) {
+            return {
+              ok: true,
+              alreadyAbsent: true,
+              detail: `already absent: invitation ${invitationId} on ${invitationOwner}/${invitationRepo}`,
+              undoHint,
+            };
+          }
+          return {
+            ok: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
       }
 
       // --- Deploy key (permanent) ---

@@ -20,6 +20,7 @@ export function ApprovalCardView({
   onApprove,
   onHold,
   onReject,
+  actionsDisabled = false,
 }: {
   card: ApiCard;
   selected: boolean;
@@ -30,6 +31,7 @@ export function ApprovalCardView({
   onApprove: () => void;
   onHold: () => void;
   onReject: () => void;
+  actionsDisabled?: boolean;
 }) {
   const stale = staleness(card.grant.lastUsedAt);
   const pending = card.status === "pending";
@@ -37,6 +39,7 @@ export function ApprovalCardView({
 
   return (
     <article
+      id={`approval-card-${card.id}`}
       role="listitem"
       tabIndex={0}
       onFocus={onFocus}
@@ -52,7 +55,7 @@ export function ApprovalCardView({
           <input
             type="checkbox"
             checked={checked}
-            disabled={!pending}
+            disabled={!pending || actionsDisabled}
             onChange={onToggleCheck}
             className="h-3.5 w-3.5 accent-[var(--color-ink)]"
             aria-label={`Select ${who}`}
@@ -63,9 +66,7 @@ export function ApprovalCardView({
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="truncate text-[14px] font-semibold tracking-tight">
-                  {who}
-                </h3>
+                <h3 className="truncate text-[14px] font-semibold tracking-tight">{who}</h3>
                 <ConfidenceBadge confidence={card.attribution.confidence} />
                 {card.irreversible ? (
                   <span className="border border-[var(--color-irrev)] bg-[var(--color-irrev-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-irrev)]">
@@ -115,7 +116,10 @@ export function ApprovalCardView({
           </div>
 
           <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
-            <Meta label="Created" value={formatWhen(card.grant.createdAt ?? card.grant.discoveredAt)} />
+            <Meta
+              label="Created"
+              value={formatWhen(card.grant.createdAt ?? card.grant.discoveredAt)}
+            />
             <Meta
               label="Last used"
               value={
@@ -155,16 +159,13 @@ export function ApprovalCardView({
 
           <ul className="mt-2 space-y-0.5 border-t border-[var(--color-line)] pt-2">
             {card.risk.reasons.map((r) => (
-              <li
-                key={r}
-                className="font-mono text-[11px] leading-snug text-[var(--color-mute)]"
-              >
+              <li key={r} className="font-mono text-[11px] leading-snug text-[var(--color-mute)]">
                 {r}
               </li>
             ))}
           </ul>
 
-          {pending ? (
+          {pending && !actionsDisabled ? (
             <div className="mt-3 flex flex-wrap gap-1.5">
               <ActionButton onClick={onApprove} variant="primary">
                 Approve
@@ -191,13 +192,7 @@ function ConfidenceBadge({ confidence }: { confidence: string }) {
   );
 }
 
-function Meta({
-  label,
-  value,
-}: {
-  label: string;
-  value: ReactNode;
-}) {
+function Meta({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
       <span className="text-[10px] uppercase tracking-[0.06em] text-[var(--color-faint)]">

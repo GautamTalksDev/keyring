@@ -1,8 +1,4 @@
-import {
-  createGrant,
-  type CreateGrantInput,
-  type Grant,
-} from "../grant.js";
+import { createGrant, type CreateGrantInput, type Grant } from "../grant.js";
 import { requireNonEmptyEvidence, type Evidence } from "../evidence.js";
 import { reconcileIdentities } from "./reconcile.js";
 import type {
@@ -25,9 +21,7 @@ export interface ReconciliationJsonInput {
  * Parse a JSON document (sandbox stdin / file) into grants and run reconciliation.
  * Accepts either CreateGrantInput shapes or materialized grants with ISO dates.
  */
-export function runReconciliationFromJson(
-  doc: ReconciliationJsonInput,
-): ReconciliationResult {
+export function runReconciliationFromJson(doc: ReconciliationJsonInput): ReconciliationResult {
   const grants = doc.grants.map((raw, index) => reviveGrant(raw, index));
   const input: ReconciliationInput = {
     grants,
@@ -46,15 +40,14 @@ function reviveGrant(raw: unknown, index: number): Grant {
   const g = raw as Record<string, unknown>;
 
   if (typeof g.id === "string" && g.principal && g.resource && g.evidence) {
-    const evidence = requireNonEmptyEvidence(
-      g.evidence as Evidence[],
-    );
+    const evidence = requireNonEmptyEvidence(g.evidence as Evidence[]);
     return {
       id: g.id as Grant["id"],
       system: g.system as Grant["system"],
       principal: g.principal as Grant["principal"],
       resource: g.resource as Grant["resource"],
       capability: g.capability as Grant["capability"],
+      ...(g.accessState ? { accessState: g.accessState as Grant["accessState"] } : {}),
       discoveredAt: new Date(String(g.discoveredAt)),
       revocable: g.revocable as Grant["revocable"],
       evidence,

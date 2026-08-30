@@ -117,6 +117,61 @@ describe("GitHub revoke", () => {
     if (absent.ok) expect(absent.alreadyAbsent).toBe(true);
   });
 
+  it("deletes pending invitations through the invitation endpoint", async () => {
+    const calls: Array<{ tool: string; arguments?: Record<string, unknown> }> = [];
+    const mcp: McpToolCaller = {
+      async callTool(request) {
+        calls.push({ tool: request.tool, arguments: request.arguments });
+        return {
+          server: request.server,
+          tool: request.tool,
+          data: {},
+        };
+      },
+    };
+    const grant = createGrant({
+      system: "github",
+      principal: {
+        kind: "human",
+        identifiers: [{ kind: "username", value: "pending-user", source: "github" }],
+      },
+      resource: {
+        id: "keyring-test/payments/invitation:42",
+        displayName: "payments",
+        kind: "repo",
+      },
+      capability: "write",
+      accessState: "pending_invitation",
+      discoveredAt: DISCOVERED,
+      revocable: {
+        possible: true,
+        reversible: true,
+        method: "delete_repository_invitation",
+      },
+      evidence: [
+        {
+          claim: "pending invitation",
+          source: "mcp:github/list_repository_invitations",
+          confidence: "certain",
+        },
+      ],
+    });
+
+    const result = await connector.revoke(grant, writeCtx({ mcp }));
+
+    expect(result.ok).toBe(true);
+    expect(calls).toEqual([
+      {
+        tool: "delete_repository_invitation",
+        arguments: {
+          owner: "keyring-test",
+          repo: "payments",
+          invitation_id: "42",
+        },
+      },
+    ]);
+  });
+
   it("revokes team membership with undo hint", async () => {
     const grant = createGrant({
       system: "github",

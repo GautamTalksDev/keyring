@@ -153,6 +153,7 @@ async function main(): Promise<void> {
       cwd: root,
       env: {
         ...process.env,
+        VITE_DEMO_MODE: "1",
         VITE_SCAN_DRIVER: "replay",
         VITE_API_BASE_URL: "",
         VITE_API_PORT: String(apiPort),

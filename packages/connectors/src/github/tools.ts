@@ -5,6 +5,7 @@ export const GITHUB_MCP_SERVER = "github";
 export const GitHubMcpTools = {
   searchRepositories: "search_repositories",
   listRepositoryCollaborators: "list_repository_collaborators",
+  listRepositoryInvitations: "list_repository_invitations",
   getTeams: "get_teams",
   getTeamMembers: "get_team_members",
   listCommits: "list_commits",
@@ -14,6 +15,8 @@ export const GitHubMcpTools = {
   listOrgPatInsights: "list_org_pat_insights",
   /** Mutating — remove a repo collaborator (idempotent on already-absent). */
   removeRepositoryCollaborator: "remove_repository_collaborator",
+  /** Mutating — delete a pending repository invitation. */
+  deleteRepositoryInvitation: "delete_repository_invitation",
   /** Mutating — remove a team membership. */
   removeTeamMember: "remove_team_member",
   /** Mutating — delete a deploy key (permanent / no undo). */
