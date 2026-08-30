@@ -42,7 +42,10 @@ export async function startScan(input: {
   });
 }
 
-export async function fetchCards(scanId: string): Promise<{
+export async function fetchCards(
+  scanId: string,
+  signal?: AbortSignal,
+): Promise<{
   scanId: string;
   status: string;
   cards: ApiCard[];
@@ -50,7 +53,7 @@ export async function fetchCards(scanId: string): Promise<{
   driver?: string | null;
   recordingId?: string | null;
 }> {
-  return request(`/scans/${scanId}/cards`);
+  return request(`/scans/${scanId}/cards`, { signal });
 }
 
 export async function postDecision(

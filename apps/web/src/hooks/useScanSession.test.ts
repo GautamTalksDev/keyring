@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { applyEvent, emptyActivity } from "./useScanSession.js";
+import type { ApiCard } from "../api/types.js";
+import { applyEvent, emptyActivity, reduce, type ScanSessionState } from "./useScanSession.js";
 
 const event = (type: string, systemId?: string) => ({
   type,
@@ -33,5 +34,52 @@ describe("scan session activity reducer", () => {
     });
     expect(afterReconcile.subagents["failed-system"]?.status).toBe("failed");
     expect(afterReconcile.subagents["healthy-system"]?.status).toBe("done");
+  });
+
+  it("discards a previous scan's card refresh after a new scan starts", () => {
+    const oldCard = { id: "old-card" } as ApiCard;
+    const newCard = { id: "new-card" } as ApiCard;
+    let state: ScanSessionState = {
+      activity: emptyActivity(),
+      cards: [] as ApiCard[],
+      loading: false,
+      error: null,
+    };
+
+    state = reduce(state, { type: "scan_starting", person: "Ada Lovelace" });
+    state = reduce(state, {
+      type: "scan_started",
+      scanId: "scan-1",
+      person: "Ada Lovelace",
+    });
+    const staleRefresh = {
+      type: "cards" as const,
+      scanId: "scan-1",
+      cards: [oldCard],
+      status: "completed",
+    };
+    state = reduce(state, { type: "scan_starting", person: "Grace Hopper" });
+    state = reduce(state, {
+      type: "scan_started",
+      scanId: "scan-2",
+      person: "Grace Hopper",
+    });
+
+    const staleResult = reduce(state, staleRefresh);
+    expect(staleResult.cards).toEqual([]);
+    expect(staleResult.activity.status).toBe("running");
+
+    const currentResult = reduce(staleResult, {
+      type: "cards",
+      scanId: "scan-2",
+      cards: [newCard],
+      status: "completed",
+    });
+    expect(currentResult.cards).toEqual([newCard]);
+    expect(currentResult.activity.status).toBe("completed");
+
+    const lateStaleResult = reduce(currentResult, staleRefresh);
+    expect(lateStaleResult.cards).toEqual([newCard]);
+    expect(lateStaleResult.activity.status).toBe("completed");
   });
 });
