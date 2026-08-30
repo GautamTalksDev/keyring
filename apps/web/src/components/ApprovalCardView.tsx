@@ -86,10 +86,9 @@ export function ApprovalCardView({
                   </span>
                 ) : null}
                 {card.grant.principal.kind === "ai_agent" &&
-                (card.grant.principal.agentName === "Keyring" ||
-                  card.grant.evidence.some(
-                    (evidence) => evidence.source === "keyring:self-inventory",
-                  )) ? (
+                card.grant.evidence.some(
+                  (evidence) => evidence.source === "keyring:self-inventory",
+                ) ? (
                   <span className="border border-[var(--color-ink)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-ink)]">
                     Self-inventory
                   </span>
@@ -188,7 +187,9 @@ export function ApprovalCardView({
           <details className="mt-2.5 border-t border-[var(--color-line)] pt-2 text-[12px]">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[var(--color-ink-2)] [&::-webkit-details-marker]:hidden">
               <span className="min-w-0 truncate">{inferenceConclusion(card, who)}</span>
-              <span className="shrink-0 text-[var(--color-faint)]">▸ show inference chain</span>
+              <span className="shrink-0 text-[var(--color-faint)]">
+                ▸ show {hasInferenceChain(card) ? "inference chain" : "attribution details"}
+              </span>
             </summary>
             <p className="mt-2 leading-relaxed text-[var(--color-mute)]">
               {card.attribution.reasoning}
@@ -231,7 +232,12 @@ export function ApprovalCardView({
 }
 
 function inferenceConclusion(card: ApiCard, who: string): string {
-  const chain = card.attribution.reasoning.split("Inference chain:")[1]?.trim();
+  const chain = hasInferenceChain(card)
+    ? card.attribution.reasoning.split("Inference chain:")[1]?.trim()
+    : undefined;
+  if (!chain && !card.attribution.resolvedTo) {
+    return `Unattributed · ${card.proposedAction.description}`;
+  }
   const firstSignal = chain
     ?.split(" → ")[0]
     ?.replace(/^\([^)]+\)\s*/, "")
@@ -240,6 +246,10 @@ function inferenceConclusion(card: ApiCard, who: string): string {
   return `${card.attribution.resolvedTo ? `Attributed to ${who}` : "Unattributed"} · ${
     card.attribution.confidence
   } · ${firstSignal || "no matching inference"}`;
+}
+
+function hasInferenceChain(card: ApiCard): boolean {
+  return card.attribution.reasoning.includes("Inference chain:");
 }
 
 function topRiskReason(reasons: string[]): string {

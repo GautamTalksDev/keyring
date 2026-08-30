@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { executeScanStream, fetchAudit, postDecision } from "../api/client.js";
 import type { ApiCard, AuditRecord, AuditVerification, ExecuteResult } from "../api/types.js";
 import type { AgentActivityState } from "../api/types.js";
-import { sortCards } from "../lib/format.js";
+import { queueSections } from "../lib/format.js";
 
 export type GuidedDemoPhase =
   | "idle"
@@ -259,7 +259,7 @@ export function useGuidedDemo({
       });
       await wait(HEADLINE_HOLD_MS, controller.signal);
 
-      const ordered = sortCards(cardsRef.current);
+      const ordered = queueSections(cardsRef.current).visualOrder;
       const safeCards = ordered.filter(
         (card) =>
           card.status === "pending" &&
