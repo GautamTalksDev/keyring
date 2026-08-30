@@ -1,4 +1,11 @@
-import { McpToolError, type McpCallRequest, type McpCallResult, type McpToolCaller } from "./types.js";
+import { redactErrorMessage } from "@keyring/core";
+
+import {
+  McpToolError,
+  type McpCallRequest,
+  type McpCallResult,
+  type McpToolCaller,
+} from "./types.js";
 import { RateLimiter, sleep, withRetries } from "./rate-limit.js";
 
 export interface RemoteMcpServerConfig {
@@ -23,9 +30,7 @@ export interface RemoteMcpToolCallerOptions {
  * but does not yet expose a generic tools/call route — so the host invokes the
  * same remote MCP URLs the harness is configured with.
  */
-export function createRemoteMcpToolCaller(
-  options: RemoteMcpToolCallerOptions,
-): McpToolCaller {
+export function createRemoteMcpToolCaller(options: RemoteMcpToolCallerOptions): McpToolCaller {
   const limiter = new RateLimiter(options.maxPerSecond ?? 5, options.maxPerSecond ?? 5);
 
   return {
@@ -74,7 +79,7 @@ export function createRemoteMcpToolCaller(
 
           if (!response.ok) {
             throw new McpToolError(
-              `MCP HTTP ${response.status}: ${await response.text()}`,
+              redactErrorMessage(`MCP HTTP ${response.status}: ${await response.text()}`),
               { server: request.server, tool: request.tool, status: response.status },
             );
           }
@@ -84,7 +89,7 @@ export function createRemoteMcpToolCaller(
             error?: { message?: string };
           };
           if (payload.error) {
-            throw new McpToolError(payload.error.message ?? "MCP tool error", {
+            throw new McpToolError(redactErrorMessage(payload.error.message ?? "MCP tool error"), {
               server: request.server,
               tool: request.tool,
             });

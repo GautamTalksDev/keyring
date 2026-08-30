@@ -1,65 +1,78 @@
-# Server HTTP API
+# Keyring HTTP API
 
-Product API the UI consumes. The **agent loop** stays in TrueForge (`@truefoundry/trueforge-sdk`); this server persists grants, ApprovalCards, and the audit ledger.
+The Keyring server provides the API used by the web UI. It stores grants, ApprovalCards, scan state, execution results, and the audit ledger. TrueForge owns the agent loop and its own session API.
 
 ## Endpoints
 
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `POST` | `/scans` | Start scan (`person` or `scope`) → `{ scanId }` |
-| `GET` | `/scans/:id/stream` | SSE: subagent progress, reconcile, completion |
-| `GET` | `/scans/:id/cards` | Approval queue for the scan |
-| `POST` | `/cards/:id/decision` | `{ decision: approve\|hold\|reject, note?, by? }` — **intent only** |
-| `POST` | `/scans/:id/execute` | Execute approved cards (SSE if `Accept: text/event-stream`) |
-| `GET` | `/audit` | Ledger + hash-chain verification |
-| `GET` | `/audit/export` | Signed JSON or CSV (`?format=json\|csv`) |
+- `POST /scans` starts a scan. Supply `person`, `scope`, or both. The response contains `scanId`.
+- `GET /scans/:id` returns scan status, metadata, identity counts, and costs.
+- `GET /scans/:id/stream` sends scan progress as server sent events.
+- `GET /scans/:id/cards` returns the ApprovalCards for a scan.
+- `POST /cards/:id/decision` records `approve`, `hold`, or `reject`. This records intent and never executes a provider action.
+- `POST /scans/:id/execute` executes approved cards. An event stream is returned when the request accepts `text/event-stream`.
+- `GET /audit` returns ledger records and hash verification.
+- `GET /audit/export` returns a signed JSON or CSV export.
+- `GET /recordings` lists available local recordings.
+- `POST /scans/:id/demo-reset` resets card decisions for an aborted demo take. It is available only when `KEYRING_DEMO=1`; append-only audit records are retained.
 
-## Rules
+## Scan drivers
 
-- **Decision ≠ execute.** Approving a card never revokes. Execution is a separate `POST /scans/:id/execute`.
-- Every mutation writes an **AuditRecord before and after** the attempt (`result: partial` then `success`/`failed`).
-- **Dry-run defaults ON** (`KEYRING_EXECUTE_DRY_RUN=1` or body `dryRun` omitted/true). Pass `"dryRun": false` to mutate for real. See [EXECUTE.md](./EXECUTE.md).
-- Zod validation on every input. Logs include `scanId` on scan-scoped work.
+The `driver` field or `KEYRING_SCAN_DRIVER` selects the scan implementation:
 
-## Drivers
+- `fixture` runs local fixture connectors and emits local subagent events.
+- `trueforge` starts a TrueForge session and mirrors its events.
+- `record` runs a scan and stores its tool summaries, events, costs, and cards.
+- `replay` reads a recording and makes no provider calls.
 
-| `KEYRING_SCAN_DRIVER` / body `driver` | Behavior |
-| --- | --- |
-| `fixture` (default) | Fan-out via FixtureConnector; emits subagent SSE events locally |
-| `trueforge` | Opens a TrueForge session/turn with the SDK, mirrors harness events, then persists a durable fixture snapshot |
+The scan metadata and `/scans/:id/cards` response expose `cardCount`,
+`humanIdentityCount`, `agentIdentityCount`, and `systemCount`. Agent cards
+include their runtime, purpose, reachable tools, declaration status, and
+evidence in the serialized grant principal. The fixture and replay drivers
+keep the authoritative demo queue at nine cards or fewer, retaining agent,
+protected, and held findings before lower-risk findings.
 
-## curl (fixture)
+## Decisions and execution
+
+Approval is separate from execution. A decision changes the card state and writes an audit record. Execution selects approved cards, writes a before record, calls the connector or dry run plan, then writes the result. Protected cards cannot be approved in bulk.
+
+Dry run is enabled by default. Set `dryRun` to `false` in the execute request only when live mutation is intentional and the live backend is configured.
+
+## Example
+
+Start a fixture scan:
 
 ```bash
-export DATABASE_URL=postgresql://keyring:keyring@localhost:5432/keyring
-pnpm db:migrate
-pnpm --filter @keyring/server start
-
 SCAN=$(curl -s -X POST http://localhost:3001/scans \
   -H 'content-type: application/json' \
   -d '{"person":"Ada Lovelace","driver":"fixture"}' | jq -r .scanId)
+```
 
+Read progress and cards:
+
+```bash
 curl -N "http://localhost:3001/scans/$SCAN/stream"
 curl -s "http://localhost:3001/scans/$SCAN/cards" | jq .
+```
 
-CARD=$(curl -s "http://localhost:3001/scans/$SCAN/cards" | jq -r '.cards[] | select(.proposedAction.kind=="revoke" and .status=="pending") | .id' | head -1)
+Record an approval and execute it as a dry run:
+
+```bash
+CARD=$(curl -s "http://localhost:3001/scans/$SCAN/cards" | jq -r '.cards[] | select(.status=="pending") | .id' | head -1)
 curl -s -X POST "http://localhost:3001/cards/$CARD/decision" \
   -H 'content-type: application/json' \
-  -d '{"decision":"approve","by":"you@example.com","note":"intent only"}'
+  -d '{"decision":"approve","by":"you@example.com"}'
 
-# Dry-run (default) — no mutating APIs
 curl -s -X POST "http://localhost:3001/scans/$SCAN/execute" \
   -H 'content-type: application/json' \
   -d '{"approvedBy":"you@example.com"}' | jq .
+```
 
-# Live execute (explicit)
-curl -s -X POST "http://localhost:3001/scans/$SCAN/execute" \
-  -H 'content-type: application/json' \
-  -d '{"approvedBy":"you@example.com","dryRun":false}' | jq .
+Verify the ledger:
 
+```bash
 curl -s http://localhost:3001/audit | jq .verification
 curl -s "http://localhost:3001/audit/export?format=json" -o audit-export.json
 pnpm verify:audit audit-export.json
 ```
 
-`verification.ok === true` (and `pnpm verify:audit`) means the ledger hash chain is intact.
+Every request is validated with Zod. Scan logs include the scan id. A failed connector is reported as a partial scan when other systems return usable data.

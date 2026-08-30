@@ -8,6 +8,7 @@ export type IdentifierKind =
   | "commit_email"
   | "username"
   | "key_id"
+  | "agent_id"
   | "display_name";
 
 export interface Identifier {

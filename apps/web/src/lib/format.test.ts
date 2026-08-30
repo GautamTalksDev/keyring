@@ -89,12 +89,14 @@ describe("format helpers", () => {
     expect(counts).toEqual({
       grants: 2,
       systems: 3,
+      humanIdentities: 2,
+      agentIdentities: 0,
       unattributed: 1,
       overYearIdle: 1,
       irreversible: 1,
     });
     expect(scanSummaryText(counts)).toBe(
-      "2 grants across 3 systems. 1 we cannot attribute to anyone. 1 not used in over a year. 1 is irreversible to revoke.",
+      "2 grants across 3 systems. 2 human identities and 0 AI agent identities. 1 we cannot attribute to anyone. 1 not used in over a year. 1 is irreversible to revoke.",
     );
   });
 
@@ -102,8 +104,37 @@ describe("format helpers", () => {
     const counts = countScanSummary([card({ id: "one" })], ["github"]);
 
     expect(counts.unattributed).toBe(0);
+    expect(counts.humanIdentities).toBe(1);
+    expect(counts.agentIdentities).toBe(0);
     expect(counts.overYearIdle).toBe(0);
     expect(counts.irreversible).toBe(0);
-    expect(scanSummaryText(counts)).toBe("1 grant across 1 system.");
+    expect(scanSummaryText(counts)).toBe(
+      "1 grant across 1 system. 1 human identity and 0 AI agent identities.",
+    );
+  });
+
+  it("counts AI agents separately from human identities", () => {
+    const agent = card({
+      id: "agent",
+      attribution: {
+        confidence: "certain",
+        reasoning: "TrueForge registration",
+        resolvedTo: "agent-1",
+      },
+      grant: {
+        ...card({ id: "agent-base" }).grant,
+        principal: {
+          kind: "ai_agent",
+          agentName: "Keyring",
+          runtime: "TrueForge",
+          declarationStatus: "declared",
+          identifiers: [{ kind: "agent_id", value: "keyring-self", source: "trueforge" }],
+        },
+      },
+    });
+    const counts = countScanSummary([card({ id: "human" }), agent], ["github", "agent_identity"]);
+    expect(counts.humanIdentities).toBe(1);
+    expect(counts.agentIdentities).toBe(1);
+    expect(scanSummaryText(counts)).toContain("1 human identity and 1 AI agent identity");
   });
 });

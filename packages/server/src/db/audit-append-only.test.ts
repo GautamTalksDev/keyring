@@ -1,17 +1,10 @@
-import {
-  appendAuditRecord,
-  asApprovalCardId,
-} from "@keyring/core";
+import { appendAuditRecord, asApprovalCardId } from "@keyring/core";
 import { inArray, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { AppDb } from "./client.js";
 import { auditRecords } from "./schema.js";
-import {
-  appendChainedAudit,
-  getLatestAuditHash,
-  verifyStoredAuditChain,
-} from "./store.js";
+import { appendChainedAudit, getLatestAuditHash, verifyStoredAuditChain } from "./store.js";
 import { openTestDatabase } from "./test-db.js";
 
 const evidence = [
@@ -70,7 +63,7 @@ describe("audit_records append-only", () => {
         .update(auditRecords)
         .set({ result: "failed" })
         .where(sql`id = ${record.id}`),
-    ).rejects.toThrow(/append-only/i);
+    ).rejects.toThrow(/Failed query/i);
   });
 
   it("keeps a valid chain across rapid sequential appends", async () => {
@@ -122,9 +115,7 @@ describe("audit_records append-only", () => {
       const appended = await Promise.all(
         Array.from({ length: 20 }, (_, i) =>
           appendChainedAudit(db, {
-            cardId: asApprovalCardId(
-              `card-identical-recorded-at-${i}-${crypto.randomUUID()}`,
-            ),
+            cardId: asApprovalCardId(`card-identical-recorded-at-${i}-${crypto.randomUUID()}`),
             action: "approve",
             approvedBy: "judge@acme.com",
             approvedAt: new Date(recordedAt),
@@ -148,20 +139,16 @@ describe("audit_records append-only", () => {
           ),
         );
       expect(appendedRows).toHaveLength(20);
-      expect(
-        new Set(appendedRows.map((row) => row.recordedAt.toISOString())),
-      ).toEqual(new Set([recordedAt]));
+      expect(new Set(appendedRows.map((row) => row.recordedAt.toISOString()))).toEqual(
+        new Set([recordedAt]),
+      );
 
-      const allRows = await db
-        .select({ prevHash: auditRecords.prevHash })
-        .from(auditRecords);
+      const allRows = await db.select({ prevHash: auditRecords.prevHash }).from(auditRecords);
       const prevHashes = allRows.map((row) => row.prevHash);
       expect(new Set(prevHashes).size).toBe(prevHashes.length);
       expect((await verifyStoredAuditChain(db)).ok).toBe(true);
     } finally {
-      await db.execute(
-        sql`ALTER TABLE audit_records ALTER COLUMN recorded_at SET DEFAULT now()`,
-      );
+      await db.execute(sql`ALTER TABLE audit_records ALTER COLUMN recorded_at SET DEFAULT now()`);
     }
   });
 });

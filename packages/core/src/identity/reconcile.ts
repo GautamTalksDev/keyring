@@ -1,4 +1,4 @@
-import { asPersonId, type GrantId } from "../brand.js";
+import { asPersonId, asPrincipalId, type GrantId } from "../brand.js";
 import type { Confidence } from "../evidence.js";
 import type { Grant } from "../grant.js";
 import { sha256Hex } from "../hash.js";
@@ -6,6 +6,7 @@ import type { Identifier } from "../identifier.js";
 import { normalizeEmailValue } from "../person.js";
 import { USERNAME_SIMILARITY_THRESHOLD, usernameNameSimilarity } from "./similarity.js";
 import type {
+  AgentDeclaration,
   DirectoryEntry,
   IdentityCluster,
   KeyAttribution,
@@ -27,9 +28,10 @@ interface Edge {
 interface SeedCluster {
   key: string;
   displayName: string;
-  kind: "human" | "service_account";
+  kind: "human" | "service_account" | "ai_agent";
   identifiers: Identifier[];
   directory?: DirectoryEntry;
+  agent?: AgentDeclaration;
 }
 
 const MS_PER_DAY = 86_400_000;
@@ -69,6 +71,8 @@ function signalLabel(signal: SignalKind): string {
       return "username similarity to directory display name (probable only)";
     case "key_attribution":
       return "key/token creation attributed to a resolved principal";
+    case "agent_declaration":
+      return "agent registration matches declared policy";
     case "temporal_onboarding":
       return "created in the same window as a resolved onboarding";
   }
@@ -144,6 +148,31 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
     uf.add(seedNode(key));
   }
 
+  // --- Seed declared AI agents (keyring.yml) ---
+  for (const agent of input.declaredAgents ?? []) {
+    const key = `agent:${agent.id}`;
+    const identifiers: Identifier[] = (agent.agentIds ?? [agent.id]).map((value) => ({
+      kind: "agent_id",
+      value,
+      source: "keyring.yml",
+    }));
+    identifiers.push(
+      ...(agent.keyIds ?? []).map((value) => ({
+        kind: "key_id" as const,
+        value,
+        source: "keyring.yml",
+      })),
+    );
+    seeds.push({
+      key,
+      displayName: agent.name,
+      kind: "ai_agent",
+      identifiers,
+      agent,
+    });
+    uf.add(seedNode(key));
+  }
+
   for (const g of grants) {
     uf.add(grantNode(g.id));
   }
@@ -163,6 +192,7 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
   const workEmailToSeed = new Map<string, string>();
   const personalEmailToSeed = new Map<string, string>();
   const usernameToSeed = new Map<string, string>();
+  const agentIdToSeed = new Map<string, string>();
   for (const seed of seeds) {
     for (const id of seed.identifiers) {
       if (id.kind === "work_email") workEmailToSeed.set(id.value, seed.key);
@@ -170,6 +200,7 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
       if (id.kind === "username") {
         usernameToSeed.set(id.value.toLowerCase(), seed.key);
       }
+      if (id.kind === "agent_id") agentIdToSeed.set(id.value, seed.key);
     }
   }
 
@@ -337,17 +368,54 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
     }
   }
 
+  // --- Signal 6: exact declared agent registration ---
+  for (const g of grants) {
+    if (g.principal.kind !== "ai_agent") continue;
+    for (const id of collectIdentifiers(g)) {
+      if (id.kind !== "agent_id") continue;
+      const seedKey = agentIdToSeed.get(id.value);
+      if (!seedKey) continue;
+      link(
+        grantNode(g.id),
+        seedNode(seedKey),
+        "agent_declaration",
+        "certain",
+        `Agent registration ${id.value} matches declared policy for ${seeds.find((s) => s.key === seedKey)?.displayName}`,
+      );
+    }
+  }
+  for (const agent of input.declaredAgents ?? []) {
+    const seedKey = `agent:${agent.id}`;
+    for (const g of grants) {
+      if (g.principal.kind !== "ai_agent") continue;
+      const keyHit = (agent.keyIds ?? []).some((keyId) =>
+        g.principal.identifiers.some((id) => id.kind === "key_id" && id.value === keyId),
+      );
+      if (!keyHit) continue;
+      link(
+        grantNode(g.id),
+        seedNode(seedKey),
+        "agent_declaration",
+        "certain",
+        `Credential ${agent.keyIds?.find((keyId) => g.principal.identifiers.some((id) => id.kind === "key_id" && id.value === keyId))} belongs to declared agent ${agent.name}`,
+      );
+    }
+  }
+
   // --- keyring.yml service accounts: link by key_id and/or resource_id ---
   for (const sa of serviceAccounts) {
     const seedKey = `sa:${sa.id}`;
     for (const g of grants) {
-      const keyHit = (sa.keyIds ?? []).some((kid) =>
-        g.principal.identifiers.some((i) => i.kind === "key_id" && i.value === kid),
-      );
+      const keyHit =
+        g.principal.kind !== "ai_agent" &&
+        (sa.keyIds ?? []).some((kid) =>
+          g.principal.identifiers.some((i) => i.kind === "key_id" && i.value === kid),
+        );
       // A shared resource can have both a human collaborator and a service
       // account deploy key. Resource ownership alone must not override an
       // explicit human principal; use resource IDs only for non-human grants.
-      const resHit = g.principal.kind !== "human" && (sa.resourceIds ?? []).includes(g.resource.id);
+      const resHit =
+        g.principal.kind === "service_account" && (sa.resourceIds ?? []).includes(g.resource.id);
       if (!keyHit && !resHit) continue;
       link(
         grantNode(g.id),
@@ -359,7 +427,7 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
     }
   }
 
-  // --- Signal 6: temporal correlation with onboarding ---
+  // --- Signal 7: temporal correlation with onboarding ---
   for (const seed of seeds) {
     const onboardedAt = seed.directory?.onboardedAt;
     if (!onboardedAt) continue;
@@ -423,7 +491,10 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
       id: sha256Hex(`cluster:${seed.key}:${grantIds.slice().sort().join(",")}`),
       kind: seed.kind,
       displayName: seed.displayName,
-      personId: asPersonId(sha256Hex(`person:${seed.key}`)),
+      ...(seed.kind === "ai_agent"
+        ? { principalId: asPrincipalId(sha256Hex(`principal:${seed.key}`)) }
+        : { personId: asPersonId(sha256Hex(`person:${seed.key}`)) }),
+      ...(seed.agent ? { agent: seed.agent } : {}),
       identifiers,
       grantIds: grantIds as GrantId[],
       confidence: clusterEdges.length === 0 ? "certain" : confidence,
@@ -452,7 +523,12 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
 
     const sample = byId.get(grantIds[0]!)!;
     const work = collectIdentifiers(sample).find((i) => i.kind === "work_email");
-    const kind = sample.principal.kind === "service_account" ? "service_account" : "human";
+    const kind =
+      sample.principal.kind === "service_account"
+        ? "service_account"
+        : sample.principal.kind === "ai_agent"
+          ? "ai_agent"
+          : "human";
     const displayName = work?.value ?? `Unresolved ${kind} cluster`;
     for (const gid of grantIds) assigned.add(gid);
     clusters.push({
@@ -468,8 +544,6 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
       reasoning: buildReasoning(displayName, groupEdges, grantIds.length),
     });
   }
-
-  // Service-account named clusters: principal.kind === service_account with shared key prefix — still require signals; otherwise unknown
 
   const unknownIds = grants.map((g) => g.id).filter((gid) => !assigned.has(gid));
   const unknown: UnknownBucket = {
@@ -494,9 +568,10 @@ function resolveAttributionTarget(
   if (workEmailToSeed.has(email)) return workEmailToSeed.get(email);
   const uname = attributedTo.trim().toLowerCase();
   if (usernameToSeed.has(uname)) return usernameToSeed.get(uname);
-  // Service account id from keyring.yml
-  const saKey = `sa:${attributedTo.trim()}`;
-  if (seeds.some((s) => s.key === saKey)) return saKey;
+  const declaredKey = seeds.find(
+    (s) => s.key === `sa:${attributedTo.trim()}` || s.key === `agent:${attributedTo.trim()}`,
+  )?.key;
+  if (declaredKey) return declaredKey;
   const byName = seeds.filter(
     (s) => s.displayName.toLowerCase() === attributedTo.trim().toLowerCase(),
   );
@@ -533,6 +608,7 @@ function buildReasoning(displayName: string, clusterEdges: Edge[], grantCount: n
     "username_in_directory",
     "username_similarity",
     "key_attribution",
+    "agent_declaration",
     "temporal_onboarding",
   ];
   const sorted = [...clusterEdges].sort(

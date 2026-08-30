@@ -36,10 +36,7 @@ export function createWriteMcpCaller(): McpToolCaller {
     return createFixtureMcpToolCaller();
   }
 
-  const servers: Record<
-    string,
-    { url: string; headers?: Record<string, string> }
-  > = {};
+  const servers: Record<string, { url: string; headers?: Record<string, string> }> = {};
 
   const githubUrl = process.env.GITHUB_MCP_URL;
   if (githubUrl) {
@@ -67,15 +64,11 @@ export function connectorForGrant(grant: Grant): Connector {
   const backend = resolveRevokeBackend();
   if (backend === "live") {
     if (grant.system === "github") {
-      const org =
-        process.env.GITHUB_ORG ??
-        process.env.KEYRING_TEST_ORG_NAME ??
-        "keyring-test";
+      const org = process.env.GITHUB_ORG ?? process.env.KEYRING_TEST_ORG_NAME ?? "keyring-test";
       return createGitHubConnector({ org });
     }
     if (grant.system === "google_workspace") {
-      const orgDomain =
-        process.env.GOOGLE_ORG_DOMAIN ?? "keyring-test.example";
+      const orgDomain = process.env.GOOGLE_ORG_DOMAIN ?? "keyring-test.example";
       return createGoogleWorkspaceConnector({ orgDomain });
     }
   }
@@ -85,18 +78,23 @@ export function connectorForGrant(grant: Grant): Connector {
 export function writeCredentialsForGrant(grant: Grant): WriteCredentials {
   if (resolveRevokeBackend() === "live") {
     if (grant.system === "github") {
+      const token = process.env.GITHUB_TOKEN ?? process.env.KEYRING_FIXTURE_WRITE_TOKEN;
+      if (!token) {
+        throw new Error("GitHub write credentials are not configured");
+      }
       return {
         kind: "write",
-        token: process.env.GITHUB_TOKEN ?? process.env.KEYRING_FIXTURE_WRITE_TOKEN ?? "missing-github-token",
+        token,
       };
     }
     if (grant.system === "google_workspace") {
+      const token = process.env.GOOGLE_ACCESS_TOKEN ?? process.env.KEYRING_FIXTURE_WRITE_TOKEN;
+      if (!token) {
+        throw new Error("Google Workspace write credentials are not configured");
+      }
       return {
         kind: "write",
-        token:
-          process.env.GOOGLE_ACCESS_TOKEN ??
-          process.env.KEYRING_FIXTURE_WRITE_TOKEN ??
-          "missing-google-token",
+        token,
       };
     }
   }

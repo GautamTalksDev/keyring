@@ -58,4 +58,28 @@ describe("createApp", () => {
     expect(response.statusCode).toBe(503);
     await app.close();
   });
+
+  it("rejects malformed MCP requests without exposing internals", async () => {
+    const app = createApp(Fastify());
+    const response = await app.inject({
+      method: "POST",
+      url: "/mcp/scan",
+      payload: { jsonrpc: "2.0", id: 1, method: 42 },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      error: { code: -32600, message: "Invalid JSON-RPC request" },
+    });
+    expect(response.body).not.toMatch(/\/home\/|node_modules|\.ts:/);
+    await app.close();
+  });
+
+  it("returns generic errors for unknown routes", async () => {
+    const app = createApp(Fastify());
+    const response = await app.inject({ method: "GET", url: "/does-not-exist" });
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toMatchObject({ error: "not_found" });
+    expect(response.body).not.toMatch(/stack|node_modules|\.ts:/i);
+    await app.close();
+  });
 });

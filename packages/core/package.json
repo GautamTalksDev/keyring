@@ -11,14 +11,13 @@
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b tsconfig.json --pretty false",
     "typecheck": "tsc -b tsconfig.json --pretty false",
     "reconcile": "node dist/identity/cli.js"
-  },
-  "bin": {
-    "keyring-reconcile": "./dist/identity/cli.js"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

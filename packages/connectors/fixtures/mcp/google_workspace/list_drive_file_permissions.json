@@ -61,7 +61,7 @@
     "response": {
       "permissions": [
         {
-          "emailAddress": "ada.numbers.personal@gmail.com",
+          "emailAddress": "ada.numbers.personal@keyring-test.example",
           "role": "reader"
         }
       ]
@@ -72,7 +72,7 @@
     "response": {
       "permissions": [
         {
-          "emailAddress": "grace.h.navy.mail@gmail.com",
+          "emailAddress": "grace.h.navy.mail@keyring-test.example",
           "role": "writer"
         }
       ]
@@ -83,7 +83,7 @@
     "response": {
       "permissions": [
         {
-          "emailAddress": "enigmamachine88@gmail.com",
+          "emailAddress": "enigmamachine88@keyring-test.example",
           "role": "reader"
         }
       ]

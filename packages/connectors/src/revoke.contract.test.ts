@@ -226,7 +226,7 @@ describe("Google Workspace revoke", () => {
         identifiers: [
           {
             kind: "personal_email",
-            value: "ada.personal@gmail.com",
+            value: "ada.personal@keyring-test.example",
             source: "google_workspace",
           },
         ],
@@ -259,7 +259,7 @@ describe("Google Workspace revoke", () => {
       expect(result.undoHint?.restoreMethod).toBe("drive.permissions.create");
       expect(result.undoHint?.params).toMatchObject({
         fileId: "folder-ada-notes",
-        email: "ada.personal@gmail.com",
+        email: "ada.personal@keyring-test.example",
         previousPermissionId: "perm-1",
       });
     }

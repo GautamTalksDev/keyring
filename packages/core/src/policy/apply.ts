@@ -2,6 +2,7 @@ import type { Grant } from "../grant.js";
 import type { KeyAttribution } from "../identity/types.js";
 import type {
   AutoApproveRule,
+  DeclaredAgentPolicy,
   KeyringPolicy,
   PolicyStalenessThresholds,
   ProtectedResourceRule,
@@ -89,6 +90,12 @@ export function serviceAccountsFromPolicy(
   return policy?.service_accounts ?? [];
 }
 
+export function declaredAgentsFromPolicy(
+  policy: KeyringPolicy | null | undefined,
+): DeclaredAgentPolicy[] {
+  return policy?.declared_agents ?? [];
+}
+
 /**
  * Normalize a loose object (parsed YAML) into KeyringPolicy with defaults.
  */
@@ -96,9 +103,7 @@ export function normalizePolicy(raw: unknown): KeyringPolicy {
   if (raw === null || typeof raw !== "object") return { ...EMPTY_POLICY };
   const o = raw as Record<string, unknown>;
   const stalenessRaw =
-    o.staleness && typeof o.staleness === "object"
-      ? (o.staleness as Record<string, unknown>)
-      : {};
+    o.staleness && typeof o.staleness === "object" ? (o.staleness as Record<string, unknown>) : {};
   const defaultsRaw =
     stalenessRaw.defaults && typeof stalenessRaw.defaults === "object"
       ? (stalenessRaw.defaults as Record<string, unknown>)
@@ -108,17 +113,16 @@ export function normalizePolicy(raw: unknown): KeyringPolicy {
       ? (o.auto_approve as Record<string, unknown>)
       : {};
   const reauditRaw =
-    o.reaudit && typeof o.reaudit === "object"
-      ? (o.reaudit as Record<string, unknown>)
-      : undefined;
+    o.reaudit && typeof o.reaudit === "object" ? (o.reaudit as Record<string, unknown>) : undefined;
 
   return {
     version: typeof o.version === "number" ? o.version : 1,
-    protected: Array.isArray(o.protected)
-      ? (o.protected as ProtectedResourceRule[])
-      : [],
+    protected: Array.isArray(o.protected) ? (o.protected as ProtectedResourceRule[]) : [],
     service_accounts: Array.isArray(o.service_accounts)
       ? (o.service_accounts as ServiceAccountPolicy[])
+      : [],
+    declared_agents: Array.isArray(o.declared_agents)
+      ? (o.declared_agents as DeclaredAgentPolicy[])
       : [],
     staleness: {
       defaults: {
@@ -142,16 +146,12 @@ export function normalizePolicy(raw: unknown): KeyringPolicy {
     },
     auto_approve: {
       enabled: autoRaw.enabled === true,
-      rules: Array.isArray(autoRaw.rules)
-        ? (autoRaw.rules as AutoApproveRule[])
-        : [],
+      rules: Array.isArray(autoRaw.rules) ? (autoRaw.rules as AutoApproveRule[]) : [],
     },
     ...(reauditRaw
       ? {
           reaudit: {
-            ...(typeof reauditRaw.cron === "string"
-              ? { cron: reauditRaw.cron }
-              : {}),
+            ...(typeof reauditRaw.cron === "string" ? { cron: reauditRaw.cron } : {}),
             ...(typeof reauditRaw.diff_only === "boolean"
               ? { diff_only: reauditRaw.diff_only }
               : {}),

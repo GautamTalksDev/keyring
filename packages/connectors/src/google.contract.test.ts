@@ -27,9 +27,7 @@ describe("GoogleWorkspaceConnector contract (MCP fixtures)", () => {
     }
 
     expect(
-      grants.every((g) =>
-        g.evidence.every((e) => e.source.startsWith("mcp:google_workspace/")),
-      ),
+      grants.every((g) => g.evidence.every((e) => e.source.startsWith("mcp:google_workspace/"))),
     ).toBe(true);
 
     const personal = grants.filter((g) =>
@@ -38,9 +36,7 @@ describe("GoogleWorkspaceConnector contract (MCP fixtures)", () => {
     expect(personal.length).toBeGreaterThanOrEqual(3);
 
     const adaPersonal = personal.find((g) =>
-      g.principal.identifiers.some(
-        (i) => i.value === "ada.numbers.personal@gmail.com",
-      ),
+      g.principal.identifiers.some((i) => i.value === "ada.numbers.personal@keyring-test.example"),
     );
     expect(adaPersonal).toBeDefined();
     expect(adaPersonal!.resource.id).toContain("board-compensation-2024");
@@ -68,9 +64,8 @@ describe("GoogleWorkspaceConnector contract (MCP fixtures)", () => {
     for (const fg of fixtureGrants) {
       const resourceId = (fg.resource as { id: string }).id;
       const capability = fg.capability as string;
-      const email = (
-        fg.principal as { identifiers: Array<{ value: string }> }
-      ).identifiers[0]?.value;
+      const email = (fg.principal as { identifiers: Array<{ value: string }> }).identifiers[0]
+        ?.value;
       expect(email).toBeTruthy();
 
       const match = grants.find(
@@ -79,10 +74,7 @@ describe("GoogleWorkspaceConnector contract (MCP fixtures)", () => {
           g.capability === capability &&
           g.principal.identifiers.some((i) => i.value === email),
       );
-      expect(
-        match,
-        `missing google fixture grant ${resourceId} / ${email}`,
-      ).toBeDefined();
+      expect(match, `missing google fixture grant ${resourceId} / ${email}`).toBeDefined();
     }
   });
 });

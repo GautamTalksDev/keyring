@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { postDecision } from "../api/client.js";
 import type { ApiCard } from "../api/types.js";
@@ -6,6 +6,28 @@ import { countScanSummary, isUnattributed, scanSummaryText, sortCards } from "..
 import { ApprovalCardView } from "./ApprovalCardView.js";
 import { ExecutePanel } from "./ExecutePanel.js";
 import { HoldDialog } from "./HoldDialog.js";
+
+interface RingRect {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+interface TravellingRing {
+  key: string;
+  rect: RingRect;
+  travelling: boolean;
+}
+
+function toRingRect(rect: DOMRect): RingRect {
+  return {
+    top: rect.top,
+    left: rect.left,
+    width: rect.width,
+    height: rect.height,
+  };
+}
 
 export function ApprovalQueue({
   cards,
@@ -33,6 +55,8 @@ export function ApprovalQueue({
   const [holdTarget, setHoldTarget] = useState<ApiCard | null>(null);
   const [executeOpen, setExecuteOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [travellingRing, setTravellingRing] = useState<TravellingRing | null>(null);
+  const previousGuidedCardId = useRef<string | null>(null);
 
   const focusable = ordered.filter((c) => c.status === "pending");
   const focused = focusable[Math.min(focusIndex, Math.max(0, focusable.length - 1))];
@@ -42,11 +66,44 @@ export function ApprovalQueue({
   }, [scanId]);
 
   useEffect(() => {
-    if (!guidedCardId) return;
-    document.getElementById(`approval-card-${guidedCardId}`)?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
+    if (!guidedCardId) {
+      previousGuidedCardId.current = null;
+      setTravellingRing(null);
+      return;
+    }
+    const target = document.getElementById(`approval-card-${guidedCardId}`);
+    if (!target) return;
+    const reducedMotion =
+      typeof window === "undefined" ||
+      !window.matchMedia ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
+
+    const targetRect = toRingRect(target.getBoundingClientRect());
+    const previous = previousGuidedCardId.current
+      ? document.getElementById(`approval-card-${previousGuidedCardId.current}`)
+      : null;
+    const startRect = previous ? toRingRect(previous.getBoundingClientRect()) : targetRect;
+    previousGuidedCardId.current = guidedCardId;
+
+    if (reducedMotion) {
+      setTravellingRing(null);
+      return;
+    }
+    const key = `${guidedCardId}-${Date.now()}`;
+    setTravellingRing({ key, rect: startRect, travelling: false });
+    const animationFrame = requestAnimationFrame(() => {
+      setTravellingRing((current) =>
+        current?.key === key ? { key, rect: targetRect, travelling: true } : current,
+      );
     });
+    const cleanup = window.setTimeout(() => {
+      setTravellingRing((current) => (current?.key === key ? null : current));
+    }, 360);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      window.clearTimeout(cleanup);
+    };
   }, [guidedCardId]);
 
   useEffect(() => {
@@ -139,6 +196,22 @@ export function ApprovalQueue({
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-[var(--color-surface)]">
+      {travellingRing ? (
+        <div
+          key={travellingRing.key}
+          aria-hidden="true"
+          className="pointer-events-none fixed z-30 border-2 border-[var(--color-ink)]"
+          style={{
+            top: travellingRing.rect.top,
+            left: travellingRing.rect.left,
+            width: travellingRing.rect.width,
+            height: travellingRing.rect.height,
+            transition: travellingRing.travelling
+              ? "top 300ms ease, left 300ms ease, width 300ms ease, height 300ms ease"
+              : undefined,
+          }}
+        />
+      ) : null}
       <header className="shrink-0 border-b border-[var(--color-line)] bg-[var(--color-panel)] px-6 py-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -217,27 +290,8 @@ export function ApprovalQueue({
           >
             <p className="text-[13px] leading-relaxed text-[var(--color-ink-2)]">
               <span className="font-semibold text-[var(--color-ink)]">
-                {summary.grants} grant{summary.grants === 1 ? "" : "s"} across {summary.systems}{" "}
-                system{summary.systems === 1 ? "" : "s"}.
+                {scanSummaryText(summary)}
               </span>
-              {summary.unattributed > 0 ? (
-                <>
-                  {" "}
-                  <span className="font-semibold text-[var(--color-irrev)]">
-                    {summary.unattributed} we cannot attribute to anyone.
-                  </span>
-                </>
-              ) : null}
-              {summary.overYearIdle > 0 ? (
-                <> {summary.overYearIdle} not used in over a year.</>
-              ) : null}
-              {summary.irreversible > 0 ? (
-                <>
-                  {" "}
-                  {summary.irreversible} {summary.irreversible === 1 ? "is" : "are"} irreversible to
-                  revoke.
-                </>
-              ) : null}
             </p>
           </div>
         ) : null}
@@ -274,6 +328,7 @@ export function ApprovalQueue({
                       onHold={() => setHoldTarget(card)}
                       onReject={() => void decide(card, "reject")}
                       actionsDisabled={guidedMode}
+                      guidedFocus={guidedCardId === card.id}
                     />
                   ))}
                 </div>
@@ -308,6 +363,7 @@ export function ApprovalQueue({
                       onHold={() => setHoldTarget(card)}
                       onReject={() => void decide(card, "reject")}
                       actionsDisabled={guidedMode}
+                      guidedFocus={guidedCardId === card.id}
                     />
                   ))}
                 </div>

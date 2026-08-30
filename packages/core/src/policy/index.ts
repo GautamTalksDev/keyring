@@ -1,6 +1,7 @@
 export type {
   AutoApprovePolicy,
   AutoApproveRule,
+  DeclaredAgentPolicy,
   KeyringPolicy,
   PolicyStalenessThresholds,
   ProtectedResourceRule,
@@ -15,5 +16,6 @@ export {
   matchResourcePattern,
   normalizePolicy,
   resolveStaleness,
+  declaredAgentsFromPolicy,
   serviceAccountsFromPolicy,
 } from "./apply.js";

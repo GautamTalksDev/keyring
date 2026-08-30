@@ -70,14 +70,14 @@ describe("record → replay (offline)", () => {
     const recording = await loadRecording(recordingId);
     expect(recording.id).toBe(recordingId);
     expect(recording.cards.length).toBeGreaterThan(0);
-    expect(recording.cards.length).toBeLessThanOrEqual(8);
-    const systemIds = ["aws", "github", "google_workspace", "notion", "slack"];
+    expect(recording.cards.length).toBeLessThanOrEqual(9);
+    const systemIds = ["agent_identity", "aws", "github", "google_workspace", "notion", "slack"];
     const subagentEvents = recording.events.filter((event) => event.type.startsWith("subagent."));
     expect(new Set(subagentEvents.map((event) => String(event.systemId)))).toEqual(
       new Set(systemIds),
     );
-    expect(subagentEvents.filter((event) => event.type === "subagent.queued")).toHaveLength(5);
-    expect(subagentEvents.filter((event) => event.type === "subagent.done")).toHaveLength(5);
+    expect(subagentEvents.filter((event) => event.type === "subagent.queued")).toHaveLength(6);
+    expect(subagentEvents.filter((event) => event.type === "subagent.done")).toHaveLength(6);
     expect(
       new Set(
         subagentEvents.filter((event) => event.type === "subagent.done").map((event) => event.at),

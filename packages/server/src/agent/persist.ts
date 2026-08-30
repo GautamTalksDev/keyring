@@ -1,6 +1,7 @@
 import {
   appendAuditRecord,
   GENESIS_HASH,
+  redactErrorMessage,
   type ApprovalCard,
   type AuditRecord,
   type Grant,
@@ -9,12 +10,7 @@ import {
 import { randomUUID } from "node:crypto";
 
 import type { Database } from "../db/client.js";
-import {
-  createScanRun,
-  finishScanRun,
-  insertApprovalCard,
-  upsertGrant,
-} from "../db/store.js";
+import { createScanRun, finishScanRun, insertApprovalCard, upsertGrant } from "../db/store.js";
 
 export interface PersistScanInput {
   grants: Grant[];
@@ -84,7 +80,7 @@ export async function persistScanOutcome(
       id: scanRunId,
       status: "failed",
       grantsDiscovered: 0,
-      error: err instanceof Error ? err.message : String(err),
+      error: redactErrorMessage(err instanceof Error ? err.message : String(err)),
     });
     throw err;
   }

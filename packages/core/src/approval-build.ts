@@ -28,18 +28,23 @@ export function buildApprovalCards(input: BuildApprovalCardsInput): ApprovalCard
   const attributionByGrant = new Map<string, Attribution>();
   const riskAttributionByGrant = new Map<
     string,
-    { kind: "human" | "service_account"; confidence: "certain" | "probable" | "speculative" }
+    {
+      kind: Grant["principal"]["kind"];
+      confidence: "certain" | "probable" | "speculative";
+      agentStatus?: "declared" | "unregistered";
+    }
   >();
   for (const cluster of reconciliation.clusters) {
     for (const gid of cluster.grantIds) {
       attributionByGrant.set(gid, {
-        resolvedTo: cluster.personId,
+        resolvedTo: cluster.principalId ?? cluster.personId,
         confidence: cluster.confidence,
         reasoning: cluster.reasoning,
       });
       riskAttributionByGrant.set(gid, {
         kind: cluster.kind,
         confidence: cluster.confidence,
+        ...(cluster.kind === "ai_agent" ? { agentStatus: "declared" as const } : {}),
       });
     }
   }
@@ -118,6 +123,22 @@ function proposeAction(
   attribution: Attribution,
   protectedReason?: string,
 ): ProposedAction {
+  if (grant.principal.kind === "ai_agent" && grant.principal.declarationStatus === "unregistered") {
+    return {
+      kind: "flag_only",
+      description:
+        "AI agent is not declared in policy — flag its owner before changing live access.",
+    };
+  }
+
+  if (grant.system === "agent_identity") {
+    return {
+      kind: "flag_only",
+      description:
+        "Agent identity evidence is inventory-only; review the underlying source connector before changing access.",
+    };
+  }
+
   if (isCiTrap(grant)) {
     return {
       kind: "flag_only",

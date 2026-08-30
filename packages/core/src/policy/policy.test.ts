@@ -4,12 +4,33 @@ import { buildApprovalCards } from "../approval-build.js";
 import { createGrant } from "../grant.js";
 import { CI_TRAP_MARKER } from "../identity/trap.js";
 import { reconcileIdentities } from "../identity/reconcile.js";
-import { normalizePolicy } from "./apply.js";
+import { declaredAgentsFromPolicy, normalizePolicy } from "./apply.js";
 import { runReconciliationFromJson } from "../identity/run.js";
 
 const CI_KEY = "AKIA_KEYRING_CI_ORPHAN_LOOKALIKE";
 
 describe("keyring.yml policy", () => {
+  it("normalizes declared agents with an owner and purpose", () => {
+    const policy = normalizePolicy({
+      declared_agents: [
+        {
+          id: "billing-reconciler",
+          name: "Billing Reconciler",
+          runtime: "TrueForge",
+          owner: "owner@keyring-test.example",
+          purpose: "Reconcile billing grants",
+          agent_ids: ["billing-reconciler"],
+        },
+      ],
+    });
+
+    expect(declaredAgentsFromPolicy(policy)).toEqual(policy.declared_agents);
+    expect(policy.declared_agents[0]).toMatchObject({
+      owner: "owner@keyring-test.example",
+      purpose: "Reconcile billing grants",
+    });
+  });
+
   it("attributes the CI trap key to a declared service account (not unknown)", () => {
     const trap = createGrant({
       system: "github",

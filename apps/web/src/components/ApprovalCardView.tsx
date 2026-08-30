@@ -21,6 +21,7 @@ export function ApprovalCardView({
   onHold,
   onReject,
   actionsDisabled = false,
+  guidedFocus = false,
 }: {
   card: ApiCard;
   selected: boolean;
@@ -32,6 +33,7 @@ export function ApprovalCardView({
   onHold: () => void;
   onReject: () => void;
   actionsDisabled?: boolean;
+  guidedFocus?: boolean;
 }) {
   const stale = staleness(card.grant.lastUsedAt);
   const pending = card.status === "pending";
@@ -48,7 +50,9 @@ export function ApprovalCardView({
         focused
           ? "border-[var(--color-ink)] ring-1 ring-[var(--color-ink)]"
           : "border-[var(--color-line)]"
-      } ${selected ? "bg-[var(--color-surface-2)]" : ""}`}
+      } ${selected ? "bg-[var(--color-surface-2)]" : ""} ${
+        guidedFocus ? "ring-2 ring-[var(--color-ink)] ring-offset-2" : ""
+      }`}
     >
       <div className="flex items-start gap-3 px-3.5 py-3">
         <label className="mt-0.5 shrink-0 cursor-pointer" onClick={(e) => e.stopPropagation()}>
@@ -68,6 +72,19 @@ export function ApprovalCardView({
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="truncate text-[14px] font-semibold tracking-tight">{who}</h3>
                 <ConfidenceBadge confidence={card.attribution.confidence} />
+                {card.grant.principal.kind === "ai_agent" ? (
+                  <span
+                    className={`border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] ${
+                      card.grant.principal.declarationStatus === "unregistered"
+                        ? "border-[var(--color-irrev)] bg-[var(--color-irrev-soft)] text-[var(--color-irrev)]"
+                        : "border-[var(--color-hold)] text-[var(--color-hold)]"
+                    }`}
+                  >
+                    {card.grant.principal.declarationStatus === "unregistered"
+                      ? "Unregistered agent"
+                      : "AI agent"}
+                  </span>
+                ) : null}
                 {card.irreversible ? (
                   <span className="border border-[var(--color-irrev)] bg-[var(--color-irrev-soft)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--color-irrev)]">
                     Permanent
@@ -103,6 +120,12 @@ export function ApprovalCardView({
                 {" on "}
                 <span className="font-medium">{card.grant.resource.displayName}</span>
               </p>
+              {card.grant.principal.kind === "ai_agent" ? (
+                <p className="mt-1 text-[11px] text-[var(--color-mute)]">
+                  Runtime: {card.grant.principal.runtime ?? "unknown"} · Reachable:{" "}
+                  {card.grant.principal.reachableTools?.join(", ") || "not reported"}
+                </p>
+              ) : null}
             </div>
 
             <div className="shrink-0 text-right">

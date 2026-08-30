@@ -220,9 +220,8 @@ export async function setCardDecision(
 }
 
 /**
- * Reset a demo take after an aborted run. This is deliberately separate from
- * the production decision path: the demo database is disposable, so its
- * abandoned audit records may be cleared before the next recording take.
+ * Reset card decisions after an aborted demo take. Audit records are never
+ * deleted, even in demo mode, because the database trigger is append-only.
  */
 export async function resetDemoScan(db: Database["db"], scanId: string): Promise<number> {
   return db.transaction(async (tx) => {
@@ -240,9 +239,6 @@ export async function resetDemoScan(db: Database["db"], scanId: string): Promise
       })
       .where(eq(approvalCards.scanId, scanId));
 
-    await tx.execute(sql`ALTER TABLE audit_records DISABLE TRIGGER audit_records_append_only`);
-    await tx.delete(auditRecords);
-    await tx.execute(sql`ALTER TABLE audit_records ENABLE TRIGGER audit_records_append_only`);
     return cards.length;
   });
 }

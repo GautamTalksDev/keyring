@@ -11,6 +11,16 @@ dist
 
 # Credentials
 *.credentials.json
+*.credentials.*
+**/*credentials*.json
+credentials.*
+**/credentials.*
+**/*service-account*.json
+**/*service_account*.json
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Logs / caches
 *.log
@@ -24,10 +34,12 @@ coverage
 .vscode
 
 # Local infra volumes
-infra/data
+infra/data/
 infra/.env
 
 # Embedded demo / local DB
-.keyring-pglite
-.keyring-pglite-demo
-.keyring-pglite-*
+.keyring-pglite*/
+**/.keyring-pglite*/
+*.sqlite
+*.sqlite3
+*.db

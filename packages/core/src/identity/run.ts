@@ -3,6 +3,7 @@ import { requireNonEmptyEvidence, type Evidence } from "../evidence.js";
 import { reconcileIdentities } from "./reconcile.js";
 import type {
   DirectoryEntry,
+  AgentDeclaration,
   KeyAttribution,
   ReconciliationInput,
   ReconciliationResult,
@@ -14,6 +15,7 @@ export interface ReconciliationJsonInput {
   directory?: DirectoryEntry[];
   keyAttributions?: KeyAttribution[];
   serviceAccounts?: ServiceAccountDeclaration[];
+  declaredAgents?: AgentDeclaration[];
   onboardingWindowDays?: number;
 }
 
@@ -28,6 +30,7 @@ export function runReconciliationFromJson(doc: ReconciliationJsonInput): Reconci
     directory: doc.directory,
     keyAttributions: doc.keyAttributions,
     serviceAccounts: doc.serviceAccounts,
+    declaredAgents: doc.declaredAgents,
     onboardingWindowDays: doc.onboardingWindowDays,
   };
   return reconcileIdentities(input);

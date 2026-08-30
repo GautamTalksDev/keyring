@@ -1,7 +1,7 @@
 {
   "version": 1,
   "id": "ada-lovelace",
-  "recordedAt": "2026-08-30T04:08:07.420Z",
+  "recordedAt": "2026-08-30T07:08:12.898Z",
   "person": "Ada Lovelace",
   "scope": null,
   "driver": "record",
@@ -12,7 +12,18 @@
   "interactions": [
     {
       "kind": "model",
-      "at": "2026-08-30T04:08:06.970Z",
+      "at": "2026-08-30T07:08:12.447Z",
+      "role": "inventory",
+      "model": "openai/gpt-4o-mini",
+      "inputTokens": 800,
+      "outputTokens": 200,
+      "costUsd": 0.00024,
+      "inputSummary": "Summarise inventory for agent_identity",
+      "outputSummary": "compact grants for agent_identity"
+    },
+    {
+      "kind": "model",
+      "at": "2026-08-30T07:08:12.447Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -23,7 +34,7 @@
     },
     {
       "kind": "model",
-      "at": "2026-08-30T04:08:06.971Z",
+      "at": "2026-08-30T07:08:12.447Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -34,7 +45,7 @@
     },
     {
       "kind": "model",
-      "at": "2026-08-30T04:08:06.971Z",
+      "at": "2026-08-30T07:08:12.447Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -45,7 +56,7 @@
     },
     {
       "kind": "model",
-      "at": "2026-08-30T04:08:06.971Z",
+      "at": "2026-08-30T07:08:12.447Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -56,7 +67,7 @@
     },
     {
       "kind": "model",
-      "at": "2026-08-30T04:08:06.971Z",
+      "at": "2026-08-30T07:08:12.447Z",
       "role": "inventory",
       "model": "openai/gpt-4o-mini",
       "inputTokens": 800,
@@ -67,7 +78,7 @@
     },
     {
       "kind": "tool",
-      "at": "2026-08-30T04:08:07.053Z",
+      "at": "2026-08-30T07:08:12.529Z",
       "tool": "inventory_system",
       "arguments": {
         "system_id": "aws"
@@ -76,7 +87,7 @@
     },
     {
       "kind": "tool",
-      "at": "2026-08-30T04:08:07.133Z",
+      "at": "2026-08-30T07:08:12.608Z",
       "tool": "inventory_system",
       "arguments": {
         "system_id": "notion"
@@ -85,7 +96,16 @@
     },
     {
       "kind": "tool",
-      "at": "2026-08-30T04:08:07.213Z",
+      "at": "2026-08-30T07:08:12.648Z",
+      "tool": "inventory_system",
+      "arguments": {
+        "system_id": "agent_identity"
+      },
+      "resultSummary": "3 grants"
+    },
+    {
+      "kind": "tool",
+      "at": "2026-08-30T07:08:12.689Z",
       "tool": "inventory_system",
       "arguments": {
         "system_id": "slack"
@@ -94,7 +114,7 @@
     },
     {
       "kind": "tool",
-      "at": "2026-08-30T04:08:07.292Z",
+      "at": "2026-08-30T07:08:12.769Z",
       "tool": "inventory_system",
       "arguments": {
         "system_id": "github"
@@ -103,7 +123,7 @@
     },
     {
       "kind": "tool",
-      "at": "2026-08-30T04:08:07.372Z",
+      "at": "2026-08-30T07:08:12.851Z",
       "tool": "inventory_system",
       "arguments": {
         "system_id": "google_workspace"
@@ -112,88 +132,98 @@
     },
     {
       "kind": "model",
-      "at": "2026-08-30T04:08:07.372Z",
+      "at": "2026-08-30T07:08:12.851Z",
       "role": "reasoning",
       "model": "openai/gpt-4o",
       "inputTokens": 2500,
       "outputTokens": 1200,
       "costUsd": 0.01825,
-      "inputSummary": "Reconcile 15 grants + risk",
+      "inputSummary": "Reconcile 18 grants + risk",
       "outputSummary": "clusters, unknown bucket, risk reasons"
     },
     {
       "kind": "tool",
-      "at": "2026-08-30T04:08:07.385Z",
+      "at": "2026-08-30T07:08:12.863Z",
       "tool": "run_identity_reconciliation",
       "arguments": {
         "grant_ids": [
+          "9611998dddbddfad54423163822e12867440589aca7edb9c4b53c81d69162e0f",
+          "2f95fe9d40c2eddcf0b2de9ccb5e9f2360b1f05856ddbefe5a17516c9956998f",
+          "b938c0d4402e9bd69026a98b8b14da989a44abae5f78117957c3c05ca7fb077b",
           "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2",
           "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c",
           "f188468b24cc04142c07854d366f7516946566cff2a5ec3d4cdce1a322bd5098",
           "c5ee63014158cea2aa23554f3aa40d8cf88f9cc89ab0a3dc213b198a4deb1691",
           "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86",
           "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344",
-          "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6",
+          "df291ba60a98ddcb8a7db69da2d3cb2418002b29e5b14e3086cb2be16db0919d",
           "2ee65775094c4508d7aa627edff05f1cf7a80f129d5b129161ae621f1c1687d5",
-          "0c35e443dbca2a083239e3d4fa609438706aab09b8c2b7bcfab283611c57909b",
+          "9dd45c0ecbffb086dcbbb62c398ca0d24feb1bd14a6cfb1ac2b7f3163d239d38",
           "dd764f717c4b5e2ef1d0418c1a1f2d1b5522cf26b32b1b4f965d3d35cf9f5f0e",
-          "167488a03e72f0c13387eae4f209a300a1d015e414189419b6371cc442b4726b",
+          "a777e8d736aae5e0f315a2b1c20d08afe19ad689ec4d0feddba155591883954b",
           "679058c31ac64945a6fee8890b23c9d50f4799eba62a81118773e68428ca96a1",
           "f7029468068e6bbca30d6c833c78613e2e856c2e3d85487662e5f28e89848885",
           "cbe573ddf3f017b1a4cc227a819a5e89686d29a64dbc4c1cb45e9cfcc9260d31",
           "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
         ]
       },
-      "resultSummary": "4 clusters, 1 unknown"
+      "resultSummary": "6 clusters, 2 unknown"
     }
   ],
   "events": [
     {
       "type": "subagent.queued",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "agent_identity",
+      "displayName": "Agent identities",
+      "at": "2026-08-30T07:08:12.446Z"
+    },
+    {
+      "type": "subagent.queued",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
       "systemId": "aws",
       "displayName": "AWS",
-      "at": "2026-08-30T04:08:06.970Z"
+      "at": "2026-08-30T07:08:12.446Z"
     },
     {
       "type": "subagent.queued",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
       "systemId": "github",
       "displayName": "GitHub",
-      "at": "2026-08-30T04:08:06.970Z"
+      "at": "2026-08-30T07:08:12.446Z"
     },
     {
       "type": "subagent.queued",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
       "systemId": "google_workspace",
       "displayName": "Google Workspace",
-      "at": "2026-08-30T04:08:06.970Z"
+      "at": "2026-08-30T07:08:12.446Z"
     },
     {
       "type": "subagent.queued",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
       "systemId": "notion",
       "displayName": "Notion",
-      "at": "2026-08-30T04:08:06.970Z"
+      "at": "2026-08-30T07:08:12.446Z"
     },
     {
       "type": "subagent.queued",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
       "systemId": "slack",
       "displayName": "Slack",
-      "at": "2026-08-30T04:08:06.970Z"
+      "at": "2026-08-30T07:08:12.446Z"
     },
     {
       "type": "subagent.started",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "aws",
-      "displayName": "AWS",
-      "at": "2026-08-30T04:08:06.970Z"
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "agent_identity",
+      "displayName": "Agent identities",
+      "at": "2026-08-30T07:08:12.447Z"
     },
     {
       "type": "cost.update",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:06.970Z",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.447Z",
       "inputTokens": 800,
       "outputTokens": 200,
       "costUsd": 0.00024,
@@ -202,15 +232,15 @@
     },
     {
       "type": "subagent.started",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "github",
-      "displayName": "GitHub",
-      "at": "2026-08-30T04:08:06.970Z"
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "aws",
+      "displayName": "AWS",
+      "at": "2026-08-30T07:08:12.447Z"
     },
     {
       "type": "cost.update",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:06.971Z",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.447Z",
       "inputTokens": 1600,
       "outputTokens": 400,
       "costUsd": 0.00048,
@@ -219,15 +249,15 @@
     },
     {
       "type": "subagent.started",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "google_workspace",
-      "displayName": "Google Workspace",
-      "at": "2026-08-30T04:08:06.971Z"
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "github",
+      "displayName": "GitHub",
+      "at": "2026-08-30T07:08:12.447Z"
     },
     {
       "type": "cost.update",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:06.971Z",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.447Z",
       "inputTokens": 2400,
       "outputTokens": 600,
       "costUsd": 0.00072,
@@ -236,15 +266,15 @@
     },
     {
       "type": "subagent.started",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "notion",
-      "displayName": "Notion",
-      "at": "2026-08-30T04:08:06.971Z"
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "google_workspace",
+      "displayName": "Google Workspace",
+      "at": "2026-08-30T07:08:12.447Z"
     },
     {
       "type": "cost.update",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:06.971Z",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.447Z",
       "inputTokens": 3200,
       "outputTokens": 800,
       "costUsd": 0.00096,
@@ -253,15 +283,15 @@
     },
     {
       "type": "subagent.started",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "slack",
-      "displayName": "Slack",
-      "at": "2026-08-30T04:08:06.971Z"
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "notion",
+      "displayName": "Notion",
+      "at": "2026-08-30T07:08:12.447Z"
     },
     {
       "type": "cost.update",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:06.971Z",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.447Z",
       "inputTokens": 4000,
       "outputTokens": 1000,
       "costUsd": 0.0012,
@@ -269,166 +299,211 @@
       "capped": false
     },
     {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "aws",
-      "found": 1,
-      "at": "2026-08-30T04:08:07.053Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "aws",
-      "found": 1,
-      "at": "2026-08-30T04:08:07.053Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "notion",
-      "found": 1,
-      "at": "2026-08-30T04:08:07.132Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "notion",
-      "found": 1,
-      "at": "2026-08-30T04:08:07.133Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
+      "type": "subagent.started",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
       "systemId": "slack",
-      "found": 1,
-      "at": "2026-08-30T04:08:07.213Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "slack",
-      "found": 2,
-      "at": "2026-08-30T04:08:07.213Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "slack",
-      "found": 3,
-      "at": "2026-08-30T04:08:07.213Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "slack",
-      "found": 3,
-      "at": "2026-08-30T04:08:07.213Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "github",
-      "found": 1,
-      "at": "2026-08-30T04:08:07.292Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "github",
-      "found": 2,
-      "at": "2026-08-30T04:08:07.292Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "github",
-      "found": 3,
-      "at": "2026-08-30T04:08:07.292Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "github",
-      "found": 4,
-      "at": "2026-08-30T04:08:07.292Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "github",
-      "found": 4,
-      "at": "2026-08-30T04:08:07.292Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "google_workspace",
-      "found": 1,
-      "at": "2026-08-30T04:08:07.372Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "google_workspace",
-      "found": 2,
-      "at": "2026-08-30T04:08:07.372Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "google_workspace",
-      "found": 3,
-      "at": "2026-08-30T04:08:07.372Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "google_workspace",
-      "found": 4,
-      "at": "2026-08-30T04:08:07.372Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "google_workspace",
-      "found": 5,
-      "at": "2026-08-30T04:08:07.372Z"
-    },
-    {
-      "type": "subagent.progress",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "google_workspace",
-      "found": 6,
-      "at": "2026-08-30T04:08:07.372Z"
-    },
-    {
-      "type": "subagent.done",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "systemId": "google_workspace",
-      "found": 6,
-      "at": "2026-08-30T04:08:07.372Z"
-    },
-    {
-      "type": "reconcile.started",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:07.372Z"
+      "displayName": "Slack",
+      "at": "2026-08-30T07:08:12.447Z"
     },
     {
       "type": "cost.update",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:07.372Z",
-      "inputTokens": 6500,
-      "outputTokens": 2200,
-      "costUsd": 0.01945,
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.447Z",
+      "inputTokens": 4800,
+      "outputTokens": 1200,
+      "costUsd": 0.00144,
+      "hardCapUsd": 0.5,
+      "capped": false
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "aws",
+      "found": 1,
+      "at": "2026-08-30T07:08:12.529Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "aws",
+      "found": 1,
+      "at": "2026-08-30T07:08:12.529Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "notion",
+      "found": 1,
+      "at": "2026-08-30T07:08:12.608Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "notion",
+      "found": 1,
+      "at": "2026-08-30T07:08:12.608Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "agent_identity",
+      "found": 1,
+      "at": "2026-08-30T07:08:12.648Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "agent_identity",
+      "found": 2,
+      "at": "2026-08-30T07:08:12.648Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "agent_identity",
+      "found": 3,
+      "at": "2026-08-30T07:08:12.648Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "agent_identity",
+      "found": 3,
+      "at": "2026-08-30T07:08:12.648Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "slack",
+      "found": 1,
+      "at": "2026-08-30T07:08:12.689Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "slack",
+      "found": 2,
+      "at": "2026-08-30T07:08:12.689Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "slack",
+      "found": 3,
+      "at": "2026-08-30T07:08:12.689Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "slack",
+      "found": 3,
+      "at": "2026-08-30T07:08:12.689Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "github",
+      "found": 1,
+      "at": "2026-08-30T07:08:12.769Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "github",
+      "found": 2,
+      "at": "2026-08-30T07:08:12.769Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "github",
+      "found": 3,
+      "at": "2026-08-30T07:08:12.769Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "github",
+      "found": 4,
+      "at": "2026-08-30T07:08:12.769Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "github",
+      "found": 4,
+      "at": "2026-08-30T07:08:12.769Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "google_workspace",
+      "found": 1,
+      "at": "2026-08-30T07:08:12.851Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "google_workspace",
+      "found": 2,
+      "at": "2026-08-30T07:08:12.851Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "google_workspace",
+      "found": 3,
+      "at": "2026-08-30T07:08:12.851Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "google_workspace",
+      "found": 4,
+      "at": "2026-08-30T07:08:12.851Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "google_workspace",
+      "found": 5,
+      "at": "2026-08-30T07:08:12.851Z"
+    },
+    {
+      "type": "subagent.progress",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "google_workspace",
+      "found": 6,
+      "at": "2026-08-30T07:08:12.851Z"
+    },
+    {
+      "type": "subagent.done",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "systemId": "google_workspace",
+      "found": 6,
+      "at": "2026-08-30T07:08:12.851Z"
+    },
+    {
+      "type": "reconcile.started",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.851Z"
+    },
+    {
+      "type": "cost.update",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.851Z",
+      "inputTokens": 7300,
+      "outputTokens": 2400,
+      "costUsd": 0.01969,
       "hardCapUsd": 0.5,
       "capped": false
     },
     {
       "type": "scan.diff",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:07.391Z",
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.868Z",
       "baselineScanId": null,
-      "added": 15,
+      "added": 18,
       "removed": 0,
       "changed": 0,
       "unchanged": 0,
@@ -436,27 +511,39 @@
     },
     {
       "type": "reconcile.done",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "at": "2026-08-30T04:08:07.391Z",
-      "clusters": 4,
-      "unknown": 1
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "at": "2026-08-30T07:08:12.868Z",
+      "clusters": 6,
+      "unknown": 2
     },
     {
       "type": "cards.persisted",
-      "scanId": "9f560f0e-3203-422c-bb02-be79d408541e",
-      "cardCount": 7,
-      "at": "2026-08-30T04:08:07.419Z"
+      "scanId": "7548156a-4e5a-4e82-bd33-32e9333fa116",
+      "cardCount": 9,
+      "humanIdentityCount": 10,
+      "agentIdentityCount": 3,
+      "systemCount": 6,
+      "at": "2026-08-30T07:08:12.898Z"
     }
   ],
   "costs": {
-    "inputTokens": 6500,
-    "outputTokens": 2200,
-    "costUsd": 0.01945,
+    "inputTokens": 7300,
+    "outputTokens": 2400,
+    "costUsd": 0.01969,
     "hardCapUsd": 0.5,
     "capped": false,
     "lines": [
       {
-        "at": "2026-08-30T04:08:06.970Z",
+        "at": "2026-08-30T07:08:12.447Z",
+        "role": "inventory",
+        "model": "openai/gpt-4o-mini",
+        "inputTokens": 800,
+        "outputTokens": 200,
+        "costUsd": 0.00024,
+        "note": "inventory_system:agent_identity"
+      },
+      {
+        "at": "2026-08-30T07:08:12.447Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -465,7 +552,7 @@
         "note": "inventory_system:aws"
       },
       {
-        "at": "2026-08-30T04:08:06.971Z",
+        "at": "2026-08-30T07:08:12.447Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -474,7 +561,7 @@
         "note": "inventory_system:github"
       },
       {
-        "at": "2026-08-30T04:08:06.971Z",
+        "at": "2026-08-30T07:08:12.447Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -483,7 +570,7 @@
         "note": "inventory_system:google_workspace"
       },
       {
-        "at": "2026-08-30T04:08:06.971Z",
+        "at": "2026-08-30T07:08:12.447Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -492,7 +579,7 @@
         "note": "inventory_system:notion"
       },
       {
-        "at": "2026-08-30T04:08:06.971Z",
+        "at": "2026-08-30T07:08:12.447Z",
         "role": "inventory",
         "model": "openai/gpt-4o-mini",
         "inputTokens": 800,
@@ -501,7 +588,7 @@
         "note": "inventory_system:slack"
       },
       {
-        "at": "2026-08-30T04:08:07.372Z",
+        "at": "2026-08-30T07:08:12.851Z",
         "role": "reasoning",
         "model": "openai/gpt-4o",
         "inputTokens": 2500,
@@ -513,27 +600,27 @@
   },
   "cards": [
     {
-      "id": "c0d7b5558b61727b2a5e83a21bf42a7c748debb12667919da2d36aa2bb6280bd",
+      "id": "147d3992db056719fd04f61c00b3d1ebdd76529097836d26eeabd524517aa593",
       "status": "pending",
       "proposedAction": {
         "kind": "flag_only",
-        "description": "Principal unresolved — flag for human investigation before any revoke."
+        "description": "AI agent is not declared in policy — flag its owner before changing live access."
       },
       "irreversible": true,
       "risk": {
         "score": 100,
         "reasons": [
-          "capability admin (+55)",
+          "capability write (+30)",
           "lastUsedAt unknown — cannot confirm recent use (+20)",
-          "revocation is irreversible (+15)",
-          "principal unresolved (kind=unknown) (+25)"
+          "revocation not possible (+25)",
+          "AI agent is unregistered and holds live access (+45)"
         ]
       },
       "attribution": {
         "confidence": "speculative",
-        "reasoning": "1 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+        "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
       },
-      "grantId": "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2"
+      "grantId": "2f95fe9d40c2eddcf0b2de9ccb5e9f2360b1f05856ddbefe5a17516c9956998f"
     },
     {
       "id": "3fa529c035e9627372e823bd4cf18ac65fc1a617e39a37304aaa1a90847c2e0e",
@@ -560,54 +647,6 @@
       "grantId": "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86"
     },
     {
-      "id": "d05255b11419080417f566350ae3e7adb6640df7e91ac4a964b51b2109d68d97",
-      "status": "pending",
-      "proposedAction": {
-        "kind": "revoke",
-        "description": "Revoke admin on #exec-comp (private) (slack)."
-      },
-      "irreversible": false,
-      "risk": {
-        "score": 80,
-        "reasons": [
-          "capability admin (+55)",
-          "last used 197 days ago — stale (≥90d) (+20)",
-          "revocation possible via admin.conversations.remove (+0)",
-          "principal resolved as human (probable) (+5)"
-        ]
-      },
-      "attribution": {
-        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
-        "confidence": "probable",
-        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
-      },
-      "grantId": "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
-    },
-    {
-      "id": "c5aad7944c4ac3aba896d8d9a0229ca3705474d08694614a9e7b6a1c2646acd0",
-      "status": "pending",
-      "proposedAction": {
-        "kind": "downgrade",
-        "description": "Consider downgrading read on Board compensation 2024."
-      },
-      "irreversible": false,
-      "risk": {
-        "score": 45,
-        "reasons": [
-          "capability read (+10)",
-          "last used 547 days ago — highly stale (≥365d) (+30)",
-          "revocation possible via drive.permissions.delete (+0)",
-          "principal resolved as human (probable) (+5)"
-        ]
-      },
-      "attribution": {
-        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
-        "confidence": "probable",
-        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
-      },
-      "grantId": "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6"
-    },
-    {
       "id": "deb48fb41f35ecb6862301bcb809faf1e8388c81d0ab27a1b7950df8d2cbd677",
       "status": "pending",
       "proposedAction": {
@@ -627,9 +666,128 @@
       "attribution": {
         "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
         "confidence": "probable",
-        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@keyring-test.example is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
       },
       "grantId": "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c"
+    },
+    {
+      "id": "6944c9bdad80f4ef1866fc02140126b2a7a31a8dc0e6f39f90a58d937c02d6f2",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "flag_only",
+        "description": "Agent identity evidence is inventory-only; review the underlying source connector before changing access."
+      },
+      "irreversible": true,
+      "risk": {
+        "score": 35,
+        "reasons": [
+          "capability read (+10)",
+          "last used 0 days ago — recent (+0)",
+          "revocation not possible (+25)",
+          "principal resolved as ai_agent (certain) (+0)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "d9a28679fbeff97b7fa6f0ecb7a41290143c67b6bb245d9ec652913c42bbd3be",
+        "confidence": "certain",
+        "reasoning": "Attributed 1 grant(s) to Keyring Reconciler. Inference chain: (certain) agent registration matches declared policy: Agent registration keyring-reconciler matches declared policy for Keyring Reconciler"
+      },
+      "grantId": "9611998dddbddfad54423163822e12867440589aca7edb9c4b53c81d69162e0f"
+    },
+    {
+      "id": "a92aa1d8df9eff5afb6de24dcce97f2f12b30c61fec48cccc5e593a9f9472d39",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "flag_only",
+        "description": "Agent identity evidence is inventory-only; review the underlying source connector before changing access."
+      },
+      "irreversible": true,
+      "risk": {
+        "score": 35,
+        "reasons": [
+          "capability read (+10)",
+          "last used 0 days ago — recent (+0)",
+          "revocation not possible (+25)",
+          "principal resolved as ai_agent (certain) (+0)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "731ef848fd194fccf7e706bd9f5a5bb7a82086725513d79697edd0d6aa481999",
+        "confidence": "certain",
+        "reasoning": "Attributed 1 grant(s) to Keyring. Inference chain: (certain) agent registration matches declared policy: Agent registration keyring-self matches declared policy for Keyring"
+      },
+      "grantId": "b938c0d4402e9bd69026a98b8b14da989a44abae5f78117957c3c05ca7fb077b"
+    },
+    {
+      "id": "c0d7b5558b61727b2a5e83a21bf42a7c748debb12667919da2d36aa2bb6280bd",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "flag_only",
+        "description": "Principal unresolved — flag for human investigation before any revoke."
+      },
+      "irreversible": true,
+      "risk": {
+        "score": 100,
+        "reasons": [
+          "capability admin (+55)",
+          "lastUsedAt unknown — cannot confirm recent use (+20)",
+          "revocation is irreversible (+15)",
+          "principal unresolved (kind=unknown) (+25)"
+        ]
+      },
+      "attribution": {
+        "confidence": "speculative",
+        "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+      },
+      "grantId": "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2"
+    },
+    {
+      "id": "d05255b11419080417f566350ae3e7adb6640df7e91ac4a964b51b2109d68d97",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "revoke",
+        "description": "Revoke admin on #exec-comp (private) (slack)."
+      },
+      "irreversible": false,
+      "risk": {
+        "score": 80,
+        "reasons": [
+          "capability admin (+55)",
+          "last used 197 days ago — stale (≥90d) (+20)",
+          "revocation possible via admin.conversations.remove (+0)",
+          "principal resolved as human (probable) (+5)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
+        "confidence": "probable",
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@keyring-test.example is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+      },
+      "grantId": "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
+    },
+    {
+      "id": "47c8aa7f2c76d65162a3837e952821791cab7165fd436617b9e113670bea14bf",
+      "status": "pending",
+      "proposedAction": {
+        "kind": "downgrade",
+        "description": "Consider downgrading read on Board compensation 2024."
+      },
+      "irreversible": false,
+      "risk": {
+        "score": 45,
+        "reasons": [
+          "capability read (+10)",
+          "last used 547 days ago — highly stale (≥365d) (+30)",
+          "revocation possible via drive.permissions.delete (+0)",
+          "principal resolved as human (probable) (+5)"
+        ]
+      },
+      "attribution": {
+        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
+        "confidence": "probable",
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@keyring-test.example is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+      },
+      "grantId": "df291ba60a98ddcb8a7db69da2d3cb2418002b29e5b14e3086cb2be16db0919d"
     },
     {
       "id": "ace5381d3f0e31dfda01909f10571d2856501a59087762d2f15d57ae48809a70",
@@ -651,46 +809,22 @@
       "attribution": {
         "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
         "confidence": "probable",
-        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@keyring-test.example is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
       },
       "grantId": "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344"
-    },
-    {
-      "id": "a86f2b2c33628533c07c645e1fd02060e88997f0e68bf8d0e213e287db0e0def",
-      "status": "pending",
-      "proposedAction": {
-        "kind": "downgrade",
-        "description": "Consider downgrading write on #eng-general."
-      },
-      "irreversible": false,
-      "risk": {
-        "score": 35,
-        "reasons": [
-          "capability write (+30)",
-          "last used 8 days ago — recent (+0)",
-          "revocation possible via conversations.kick (+0)",
-          "principal resolved as human (probable) (+5)"
-        ]
-      },
-      "attribution": {
-        "resolvedTo": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
-        "confidence": "probable",
-        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
-      },
-      "grantId": "f7029468068e6bbca30d6c833c78613e2e856c2e3d85487662e5f28e89848885"
     }
   ],
   "reconciliation": {
     "clusters": [
       {
-        "id": "5a438941cddfb6b451ae4130feb3bf46a43270e588e0ba7faf8aa8195ec4bdbe",
+        "id": "279ecd78973f222edfa5b213d444268f22c80fde3bf51aff07972ced88f28a74",
         "kind": "human",
         "displayName": "Ada Lovelace",
         "personId": "346d6f9c2dd4bfc951e5b142ade3a52f28d9920d6faaabbf5dddab4063acea43",
         "identifiers": [
           {
             "kind": "personal_email",
-            "value": "ada.numbers.personal@gmail.com",
+            "value": "ada.numbers.personal@keyring-test.example",
             "source": "google_workspace"
           },
           {
@@ -712,22 +846,22 @@
         "grantIds": [
           "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344",
           "f7029468068e6bbca30d6c833c78613e2e856c2e3d85487662e5f28e89848885",
-          "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6",
+          "df291ba60a98ddcb8a7db69da2d3cb2418002b29e5b14e3086cb2be16db0919d",
           "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c",
           "196e91a1f6c5221a50c3809bfe28640a6616be5a420e85f0075a256e02069d6e"
         ],
         "confidence": "probable",
-        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@gmail.com is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
+        "reasoning": "Attributed 5 grant(s) to Ada Lovelace. Inference chain: (certain) exact work-email match: Both grants carry work email ada@keyring-test.example → (certain) exact work-email match: Grant work email ada@keyring-test.example matches directory for Ada Lovelace → (certain) personal email present on the org directory record: Personal email ada.numbers.personal@keyring-test.example is listed on the directory record for Ada Lovelace → (certain) username listed on the org directory record: Username analyticalengine is listed on the directory record for Ada Lovelace → (probable) username similarity to directory display name (probable only): Username \"ada.l\" resembles directory name \"Ada Lovelace\" (score 1.00); never treated as certain"
       },
       {
-        "id": "1399fb65abb03312666c8f4286fefe7509f1439504ad4eae6c15f784d620e11d",
+        "id": "a3ebc690d1f03e7bf5b48010b6636395a30ec5d9ac1d7db6120facd6fcbaca69",
         "kind": "human",
         "displayName": "Alan Turing",
         "personId": "16688c5a9aa6ce82eae083218dfbadaa41446aa4758ff5218ce4e2446e0afd48",
         "identifiers": [
           {
             "kind": "personal_email",
-            "value": "enigmamachine88@gmail.com",
+            "value": "enigmamachine88@keyring-test.example",
             "source": "google_workspace"
           },
           {
@@ -744,11 +878,11 @@
         "grantIds": [
           "cbe573ddf3f017b1a4cc227a819a5e89686d29a64dbc4c1cb45e9cfcc9260d31",
           "dd764f717c4b5e2ef1d0418c1a1f2d1b5522cf26b32b1b4f965d3d35cf9f5f0e",
-          "167488a03e72f0c13387eae4f209a300a1d015e414189419b6371cc442b4726b",
+          "a777e8d736aae5e0f315a2b1c20d08afe19ad689ec4d0feddba155591883954b",
           "c5ee63014158cea2aa23554f3aa40d8cf88f9cc89ab0a3dc213b198a4deb1691"
         ],
         "confidence": "certain",
-        "reasoning": "Attributed 4 grant(s) to Alan Turing. Inference chain: (certain) exact work-email match: Both grants carry work email alan@keyring-test.example → (certain) exact work-email match: Grant work email alan@keyring-test.example matches directory for Alan Turing → (certain) personal email present on the org directory record: Personal email enigmamachine88@gmail.com is listed on the directory record for Alan Turing → (certain) username listed on the org directory record: Username bombe-ops is listed on the directory record for Alan Turing"
+        "reasoning": "Attributed 4 grant(s) to Alan Turing. Inference chain: (certain) exact work-email match: Both grants carry work email alan@keyring-test.example → (certain) exact work-email match: Grant work email alan@keyring-test.example matches directory for Alan Turing → (certain) personal email present on the org directory record: Personal email enigmamachine88@keyring-test.example is listed on the directory record for Alan Turing → (certain) username listed on the org directory record: Username bombe-ops is listed on the directory record for Alan Turing"
       },
       {
         "id": "f0e94a3325940b70c72a5884b4aef6ce8dd30d6ba1ab2731fe8e0040ff352922",
@@ -767,14 +901,14 @@
         "reasoning": "Attributed 1 grant(s) to GitHub Actions — payments CDN publish. Inference chain: (probable) key/token creation attributed to a resolved principal: Key AKIA_KEYRING_CI_ORPHAN_LOOKALIKE attributed to ci-payments-cdn via keyring.yml:service_accounts/ci-payments-cdn → (certain) key/token creation attributed to a resolved principal: Declared service account \"GitHub Actions — payments CDN publish\" (owner platform@keyring-test.example) in keyring.yml"
       },
       {
-        "id": "edcf420a53cf8e754f10e1f31e118925e4769ee7694b142c8387fa004cbbe538",
+        "id": "b09cd799e0499b22ec600a1977f3461ba7c13dcc57402c0fb8cdd3c6a1767b34",
         "kind": "human",
         "displayName": "Grace Hopper",
         "personId": "62a71b9ef164d79a1ee0c76e6f82f3167621eafc31012a9e4a1a4ca9efa6e60e",
         "identifiers": [
           {
             "kind": "personal_email",
-            "value": "grace.h.navy.mail@gmail.com",
+            "value": "grace.h.navy.mail@keyring-test.example",
             "source": "google_workspace"
           },
           {
@@ -791,30 +925,96 @@
         "grantIds": [
           "2ee65775094c4508d7aa627edff05f1cf7a80f129d5b129161ae621f1c1687d5",
           "679058c31ac64945a6fee8890b23c9d50f4799eba62a81118773e68428ca96a1",
-          "0c35e443dbca2a083239e3d4fa609438706aab09b8c2b7bcfab283611c57909b",
+          "9dd45c0ecbffb086dcbbb62c398ca0d24feb1bd14a6cfb1ac2b7f3163d239d38",
           "f188468b24cc04142c07854d366f7516946566cff2a5ec3d4cdce1a322bd5098"
         ],
         "confidence": "certain",
-        "reasoning": "Attributed 4 grant(s) to Grace Hopper. Inference chain: (certain) exact work-email match: Both grants carry work email grace@keyring-test.example → (certain) exact work-email match: Grant work email grace@keyring-test.example matches directory for Grace Hopper → (certain) personal email present on the org directory record: Personal email grace.h.navy.mail@gmail.com is listed on the directory record for Grace Hopper → (certain) username listed on the org directory record: Username cobol-compiler is listed on the directory record for Grace Hopper"
+        "reasoning": "Attributed 4 grant(s) to Grace Hopper. Inference chain: (certain) exact work-email match: Both grants carry work email grace@keyring-test.example → (certain) exact work-email match: Grant work email grace@keyring-test.example matches directory for Grace Hopper → (certain) personal email present on the org directory record: Personal email grace.h.navy.mail@keyring-test.example is listed on the directory record for Grace Hopper → (certain) username listed on the org directory record: Username cobol-compiler is listed on the directory record for Grace Hopper"
+      },
+      {
+        "id": "235923b0575769eb6f96e4de1a1ae62656b0db08f36288f8af69cc90dbd34d62",
+        "kind": "ai_agent",
+        "displayName": "Keyring",
+        "principalId": "731ef848fd194fccf7e706bd9f5a5bb7a82086725513d79697edd0d6aa481999",
+        "agent": {
+          "id": "keyring-self",
+          "name": "Keyring",
+          "runtime": "TrueForge",
+          "owner": "security@keyring-test.example",
+          "purpose": "Inventory access and produce evidence-backed approval cards",
+          "agentIds": ["keyring-self"],
+          "tools": ["keyring-mcp"]
+        },
+        "identifiers": [
+          {
+            "kind": "agent_id",
+            "value": "keyring-self",
+            "source": "mcp_token"
+          },
+          {
+            "kind": "key_id",
+            "value": "fixture-keyring-self-mcp",
+            "source": "mcp_token"
+          }
+        ],
+        "grantIds": ["b938c0d4402e9bd69026a98b8b14da989a44abae5f78117957c3c05ca7fb077b"],
+        "confidence": "certain",
+        "reasoning": "Attributed 1 grant(s) to Keyring. Inference chain: (certain) agent registration matches declared policy: Agent registration keyring-self matches declared policy for Keyring"
+      },
+      {
+        "id": "e752fecdba6e062b1e19ed24a3047166b5e1327d093eee9c3d86434dbec2c094",
+        "kind": "ai_agent",
+        "displayName": "Keyring Reconciler",
+        "principalId": "d9a28679fbeff97b7fa6f0ecb7a41290143c67b6bb245d9ec652913c42bbd3be",
+        "agent": {
+          "id": "keyring-reconciler",
+          "name": "Keyring Reconciler",
+          "runtime": "TrueForge",
+          "owner": "platform@keyring-test.example",
+          "purpose": "Reconcile discovered grants and prepare an approval queue",
+          "agentIds": ["keyring-reconciler"],
+          "tools": ["keyring-mcp"]
+        },
+        "identifiers": [
+          {
+            "kind": "agent_id",
+            "value": "keyring-reconciler",
+            "source": "mcp_token"
+          },
+          {
+            "kind": "key_id",
+            "value": "fixture-keyring-reconciler-mcp",
+            "source": "mcp_token"
+          }
+        ],
+        "grantIds": ["9611998dddbddfad54423163822e12867440589aca7edb9c4b53c81d69162e0f"],
+        "confidence": "certain",
+        "reasoning": "Attributed 1 grant(s) to Keyring Reconciler. Inference chain: (certain) agent registration matches declared policy: Agent registration keyring-reconciler matches declared policy for Keyring Reconciler"
       }
     ],
     "unknown": {
-      "grantIds": ["8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2"],
-      "reasoning": "1 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
+      "grantIds": [
+        "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2",
+        "2f95fe9d40c2eddcf0b2de9ccb5e9f2360b1f05856ddbefe5a17516c9956998f"
+      ],
+      "reasoning": "2 grant(s) could not be attributed with the available signals (work email, commit email, directory personal email/username, non-ambiguous username similarity, key attribution, or unique onboarding window). Left in unknown rather than guessed into a person — these are the scariest findings."
     }
   },
   "grantIds": [
+    "9611998dddbddfad54423163822e12867440589aca7edb9c4b53c81d69162e0f",
+    "2f95fe9d40c2eddcf0b2de9ccb5e9f2360b1f05856ddbefe5a17516c9956998f",
+    "b938c0d4402e9bd69026a98b8b14da989a44abae5f78117957c3c05ca7fb077b",
     "8942440fea1f8ec0b5b7e3ae63e86aa93f8bbad2a0882efe003949ed2e1847f2",
     "efe2612c13923b03d4641346ecac260168123aeb6c499428a40b613e7362889c",
     "f188468b24cc04142c07854d366f7516946566cff2a5ec3d4cdce1a322bd5098",
     "c5ee63014158cea2aa23554f3aa40d8cf88f9cc89ab0a3dc213b198a4deb1691",
     "e9b67d09a9f732d5b8bf904cc337df152f82d4c310af44cb13523c0a95d13e86",
     "474b8dc484730147e9016bd5176f2e7bd918c0c614a1f58d96f58cda5ddfb344",
-    "c42b99954ceb07a3d653032e168ed3d7ea390c3544028b4154b2349c4a70f9e6",
+    "df291ba60a98ddcb8a7db69da2d3cb2418002b29e5b14e3086cb2be16db0919d",
     "2ee65775094c4508d7aa627edff05f1cf7a80f129d5b129161ae621f1c1687d5",
-    "0c35e443dbca2a083239e3d4fa609438706aab09b8c2b7bcfab283611c57909b",
+    "9dd45c0ecbffb086dcbbb62c398ca0d24feb1bd14a6cfb1ac2b7f3163d239d38",
     "dd764f717c4b5e2ef1d0418c1a1f2d1b5522cf26b32b1b4f965d3d35cf9f5f0e",
-    "167488a03e72f0c13387eae4f209a300a1d015e414189419b6371cc442b4726b",
+    "a777e8d736aae5e0f315a2b1c20d08afe19ad689ec4d0feddba155591883954b",
     "679058c31ac64945a6fee8890b23c9d50f4799eba62a81118773e68428ca96a1",
     "f7029468068e6bbca30d6c833c78613e2e856c2e3d85487662e5f28e89848885",
     "cbe573ddf3f017b1a4cc227a819a5e89686d29a64dbc4c1cb45e9cfcc9260d31",

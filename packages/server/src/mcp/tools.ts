@@ -1,26 +1,25 @@
-import type { ApprovalCard, Grant, ReconciliationResult } from "@keyring/core";
 import {
-  asApprovalCardId,
-  buildApprovalCards,
-  CI_TRAP_MARKER,
+  redactErrorMessage,
+  redactSecrets,
+  type ApprovalCard,
+  type Grant,
+  type ReconciliationResult,
 } from "@keyring/core";
+import { asApprovalCardId, buildApprovalCards, CI_TRAP_MARKER } from "@keyring/core";
 import { z } from "zod";
 
 import { persistScanOutcome } from "../agent/persist.js";
 import {
   inventorySystem,
+  limitDemoCards,
   listConnectedSystems,
-  loadFullFixtureGrants,
+  loadAllFixtureGrants,
   runIdentityReconciliation,
   type CompactGrant,
 } from "../agent/scan.js";
 import type { Database } from "../db/client.js";
 import { appendChainedAudit, getApprovalCard, hasSuccessfulExecute } from "../db/store.js";
-import {
-  evidenceWithUndo,
-  resolveExecuteDryRun,
-  revokeGrant,
-} from "../services/revoke-runtime.js";
+import { evidenceWithUndo, resolveExecuteDryRun, revokeGrant } from "../services/revoke-runtime.js";
 
 export type JsonRpcId = string | number | null;
 
@@ -45,13 +44,13 @@ export interface McpToolDef {
 
 function textResult(data: unknown) {
   return {
-    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+    content: [{ type: "text" as const, text: JSON.stringify(redactSecrets(data), null, 2) }],
   };
 }
 
 function errorResult(message: string) {
   return {
-    content: [{ type: "text" as const, text: message }],
+    content: [{ type: "text" as const, text: redactErrorMessage(message) }],
     isError: true,
   };
 }
@@ -140,8 +139,7 @@ export function mutateToolDefs(): McpToolDef[] {
           approved_by: { type: "string" },
           dry_run: {
             type: "boolean",
-            description:
-              "Optional override. Default follows KEYRING_EXECUTE_DRY_RUN (ON).",
+            description: "Optional override. Default follows KEYRING_EXECUTE_DRY_RUN (ON).",
           },
         },
         required: ["grant_id", "approval_card_id", "approved_by"],
@@ -185,20 +183,18 @@ export async function handleScanTool(
         const personHint = z.string().optional().parse(args.person_hint);
         const { reconciliation, grantCount, input, policy } =
           await runIdentityReconciliation(grantIds);
-        const grants = (await loadFullFixtureGrants()).filter((g) =>
-          grantIds.includes(g.id),
-        );
+        const grants = (await loadAllFixtureGrants()).filter((g) => grantIds.includes(g.id));
         let cards = buildApprovalCards({ grants, reconciliation, policy });
         if (personHint) {
           const hint = personHint.toLowerCase();
           cards = cards.filter(
             (c) =>
               c.attribution.reasoning.toLowerCase().includes(hint) ||
-              c.grant.principal.identifiers.some((i) =>
-                i.value.toLowerCase().includes(hint),
-              ),
+              c.grant.principal.identifiers.some((i) => i.value.toLowerCase().includes(hint)) ||
+              c.grant.principal.kind === "ai_agent",
           );
         }
+        cards = limitDemoCards(cards);
         return textResult({
           grantCount,
           clusterCount: reconciliation.clusters.length,
@@ -208,8 +204,7 @@ export async function handleScanTool(
           cardCount: cards.length,
           ciTrapHeld: cards.some(
             (c) =>
-              c.status === "held" &&
-              c.grant.evidence.some((e) => e.claim.includes(CI_TRAP_MARKER)),
+              c.status === "held" && c.grant.evidence.some((e) => e.claim.includes(CI_TRAP_MARKER)),
           ),
           sandboxNote:
             "Identical to `node packages/core/dist/identity/cli.js` / skill sandbox CLI. Prefer sandbox file+CLI when provisioned.",
@@ -220,9 +215,7 @@ export async function handleScanTool(
         const grantIds = z.array(z.string()).parse(args.grant_ids);
         const personHint = z.string().optional().parse(args.person_hint);
         const reconciliation = args.reconciliation as ReconciliationResult;
-        const grants = (await loadFullFixtureGrants()).filter((g) =>
-          grantIds.includes(g.id),
-        );
+        const grants = (await loadAllFixtureGrants()).filter((g) => grantIds.includes(g.id));
         const { policy } = await runIdentityReconciliation(grantIds);
         let cards = buildApprovalCards({ grants, reconciliation, policy });
         if (personHint) {
@@ -230,11 +223,11 @@ export async function handleScanTool(
           cards = cards.filter(
             (c) =>
               c.attribution.reasoning.toLowerCase().includes(hint) ||
-              c.grant.principal.identifiers.some((i) =>
-                i.value.toLowerCase().includes(hint),
-              ),
+              c.grant.principal.identifiers.some((i) => i.value.toLowerCase().includes(hint)) ||
+              c.grant.principal.kind === "ai_agent",
           );
         }
+        cards = limitDemoCards(cards);
         const persisted = await persistScanOutcome(ctx.db, {
           grants,
           cards,
@@ -273,17 +266,13 @@ export async function handleMutateTool(
     );
 
     const card = ctx.db ? await getApprovalCard(ctx.db, approvalCardId) : null;
-    const grant =
-      card?.grant ??
-      (await loadFullFixtureGrants()).find((g) => g.id === grantId);
+    const grant = card?.grant ?? (await loadAllFixtureGrants()).find((g) => g.id === grantId);
 
     if (!grant) {
       return errorResult(`Grant not found: ${grantId}`);
     }
     if (grantId !== grant.id) {
-      return errorResult(
-        `grant_id ${grantId} does not match card grant ${grant.id}`,
-      );
+      return errorResult(`grant_id ${grantId} does not match card grant ${grant.id}`);
     }
     if (grant.evidence.some((e) => e.claim.includes(CI_TRAP_MARKER))) {
       return errorResult(
@@ -330,11 +319,7 @@ export async function handleMutateTool(
       : dryRun
         ? ("partial" as const)
         : ("success" as const);
-    const afterError = !result.ok
-      ? result.error
-      : dryRun
-        ? "dry_run"
-        : undefined;
+    const afterError = !result.ok ? result.error : dryRun ? "dry_run" : undefined;
 
     if (ctx.db) {
       await appendChainedAudit(ctx.db, {

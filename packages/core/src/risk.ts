@@ -31,6 +31,7 @@ export interface RiskScoreOptions {
     kind: Grant["principal"]["kind"];
     confidence: Confidence;
   };
+  agentStatus?: "declared" | "unregistered";
 }
 
 /**
@@ -86,7 +87,14 @@ export function computeRiskScore(grant: Grant, options: RiskScoreOptions = {}): 
     kind: grant.principal.kind,
     confidence: "certain" as const,
   };
-  if (!options.attribution && principal.kind === "unknown") {
+  if (
+    !options.attribution &&
+    grant.principal.kind === "ai_agent" &&
+    (options.agentStatus ?? grant.principal.declarationStatus) === "unregistered"
+  ) {
+    score += 45;
+    reasons.push("AI agent is unregistered and holds live access (+45)");
+  } else if (!options.attribution && principal.kind === "unknown") {
     score += 25;
     reasons.push("principal unresolved (kind=unknown) (+25)");
   } else if (

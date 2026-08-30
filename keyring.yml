@@ -25,6 +25,28 @@ service_accounts:
     resource_ids:
       - keyring-test/payments
 
+# Named AI agents must have a human owner and a stated purpose. Agents found
+# outside this list are reported as unregistered.
+declared_agents:
+  - id: keyring-reconciler
+    name: "Keyring Reconciler"
+    runtime: "TrueForge"
+    owner: "platform@keyring-test.example"
+    purpose: "Reconcile discovered grants and prepare an approval queue"
+    agent_ids:
+      - keyring-reconciler
+    tools:
+      - keyring-mcp
+  - id: keyring-self
+    name: "Keyring"
+    runtime: "TrueForge"
+    owner: "security@keyring-test.example"
+    purpose: "Inventory access and produce evidence-backed approval cards"
+    agent_ids:
+      - keyring-self
+    tools:
+      - keyring-mcp
+
 staleness:
   defaults:
     cooling_days: 30

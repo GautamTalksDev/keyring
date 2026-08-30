@@ -1,32 +1,24 @@
-# Policy (`keyring.yml`)
+# Policy
 
-Customer-owned policy checked into **their** repo. Keyring loads it on every scan.
+The customer keeps `keyring.yml` in the repository that owns the access policy. Keyring reads it during a scan and uses it to identify service accounts, protect resources, score stale access, and optionally approve low risk cards.
 
-## Location
+## Main sections
 
-```
-KEYRING_POLICY_PATH   # optional override
-# default: <repo>/keyring.yml
-```
+- `service_accounts` names automation identities, their owners, key ids, and resources.
+- `declared_agents` names AI agents, their human owners, runtimes, purposes, and reachable tools.
+- `protected` marks resources that always need individual approval.
+- `staleness` sets idle thresholds used by risk scoring.
+- `auto_approve` defines optional rules. It is disabled by default.
+- `reaudit` configures scheduled scans and diff only behavior.
 
-## Sections
+## CI service account
 
-| Block | Purpose |
-| --- | --- |
-| `protected` | Resource patterns that always need individual approval — **never bulk-approved** |
-| `service_accounts` | Known automation identities (keys + resources + owner). Resolves orphan lookalikes. |
-| `staleness` | Per-system idle thresholds for risk scoring |
-| `auto_approve` | Optional safe auto-approve rules — **`enabled: false` by default**; UI shows which rule fired |
-| `reaudit` | Cron + diff-only scheduled scans |
-
-## Worked example — Checkpoint 4 CI trap
-
-The demo deploy key `AKIA_KEYRING_CI_ORPHAN_LOOKALIKE` on `keyring-test/payments` looks orphaned until declared:
+This policy entry tells Keyring that the payments deploy key belongs to CI:
 
 ```yaml
 service_accounts:
   - id: ci-payments-cdn
-    display_name: "GitHub Actions — payments CDN publish"
+    display_name: "GitHub Actions, payments CDN publish"
     owner: "platform@keyring-test.example"
     key_ids:
       - AKIA_KEYRING_CI_ORPHAN_LOOKALIKE
@@ -36,45 +28,63 @@ service_accounts:
 protected:
   - resource: "keyring-test/payments"
     system: github
-    reason: "Prod payments CDN — always human approval"
+    reason: "Production payments CDN, individual approval required"
 ```
 
-After this:
+The service account moves the CI key from unknown to a named service account. The protected rule keeps it out of bulk approval. The guided demo holds this card and asks the operator to flag the owner.
 
-1. Reconcile seeds a **service_account** cluster (not `unknown`)
-2. The ApprovalCard gets `attribution.resolvedTo` → leaves the **Unattributed** pin
-3. It stays **held / flag_only** (CI trap marker) and **Protected** (no bulk approve)
+## Declared agents
 
-## Auto-approve
+AI agents need a stable declaration even when they use service accounts or
+OAuth grants:
+
+```yaml
+declared_agents:
+  - id: billing-reconciler
+    name: "Billing Reconciler"
+    runtime: "TrueForge"
+    owner: "owner@example.test"
+    purpose: "Reconcile billing grants"
+    agent_ids:
+      - billing-reconciler
+    tools:
+      - billing-mcp
+```
+
+The owner and purpose are required policy facts. Keyring matches an agent by
+exact `agent_id` or declared credential `key_id`. It does not use a human
+directory record to infer that an agent is declared, and resource overlap
+does not turn an agent grant into a service-account grant. A discovered agent
+without a matching declaration is labeled unregistered and receives the
+highest risk treatment when it holds access.
+
+The agent identity connector currently inventories evidence and does not
+mutate the underlying credential. A source connector with a documented live
+capability is required before Keyring can change that credential.
+
+## Auto approval
+
+Auto approval is opt in:
 
 ```yaml
 auto_approve:
-  enabled: false   # flip to true only when you mean it
+  enabled: false
   rules:
     - id: safe-read-reversible
-      description: "Reversible read-only grants under risk 35"
+      description: "Reversible read access under risk 35"
       max_capability: read
       reversible_only: true
       max_risk: 35
 ```
 
-Protected resources and CI traps never auto-approve. When a rule fires, the card shows `Auto: <rule-id>` and `decision.by = policy:<rule-id>`.
+Protected resources and CI cards are never auto approved. A card shows the rule id and records `policy:<rule id>` as the decision author when a rule applies.
 
-## Scheduled re-audit
+## Scheduled re audit
 
 ```yaml
 reaudit:
-  cron: "0 6 * * *"   # or set KEYRING_REAUDIT_CRON
+  cron: "0 6 * * *"
   diff_only: true
 ```
 
-The server arms a cron job on boot. Each run starts a scan with `reaudit: true`, diffs grant ids against the previous completed scan, emits `scan.diff` SSE, and (when `diff_only`) only queues cards for **added/changed** grants (plus held/protected).
-
-```bash
-# Manual re-audit
-curl -s -X POST localhost:3001/scans \
-  -H 'content-type: application/json' \
-  -d '{"reaudit":true,"diffOnly":true,"person":"scheduled-reaudit"}'
-```
-
-New access appearing is reported the same way as old access lingering (`added` vs `removed` in the diff).
+The server can start a scheduled scan, compare grant ids with the previous completed scan, emit `scan.diff`, and queue only added or changed grants when `diff_only` is enabled.

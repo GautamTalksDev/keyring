@@ -1,19 +1,11 @@
-import { CI_TRAP_MARKER, type ApprovalCard } from "@keyring/core";
+import { CI_TRAP_MARKER, redactErrorMessage, type ApprovalCard } from "@keyring/core";
 import type { FastifyBaseLogger } from "fastify";
 
 import type { Database } from "../db/client.js";
 import { classifyProductError } from "../errors/classify.js";
-import {
-  appendChainedAudit,
-  hasSuccessfulExecute,
-  listApprovedCardsForScan,
-} from "../db/store.js";
+import { appendChainedAudit, hasSuccessfulExecute, listApprovedCardsForScan } from "../db/store.js";
 import { scanBus, scanLog, type ScanProgressEvent } from "../api/progress.js";
-import {
-  evidenceWithUndo,
-  resolveExecuteDryRun,
-  revokeGrant,
-} from "./revoke-runtime.js";
+import { evidenceWithUndo, resolveExecuteDryRun, revokeGrant } from "./revoke-runtime.js";
 
 export interface ExecuteOptions {
   db: Database["db"];
@@ -58,9 +50,7 @@ export interface ExecuteSummary {
  * Each card is independently retryable: prior successful executes are skipped.
  * Partial batch failure never invents success — failed cards stay failed in the ledger.
  */
-export async function executeApprovedCards(
-  opts: ExecuteOptions,
-): Promise<ExecuteSummary> {
+export async function executeApprovedCards(opts: ExecuteOptions): Promise<ExecuteSummary> {
   const dryRun = resolveExecuteDryRun(opts.dryRun);
   const log = scanLog(opts.log, opts.scanId);
   const emit =
@@ -123,10 +113,7 @@ export async function executeApprovedCards(
       dryRun,
       at: beforeAt.toISOString(),
     });
-    log.info(
-      { cardId: card.id, phase: "before", dryRun },
-      "execute attempt started",
-    );
+    log.info({ cardId: card.id, phase: "before", dryRun }, "execute attempt started");
 
     let afterResult: "success" | "failed" | "partial" = "failed";
     let error: string | undefined;
@@ -143,7 +130,7 @@ export async function executeApprovedCards(
           dryRun,
         });
         if (revoke.ok) {
-          detail = revoke.detail;
+          detail = revoke.detail ? redactErrorMessage(revoke.detail) : undefined;
           if (revoke.undoHint) {
             undoHint = {
               permission: revoke.undoHint.permission,
@@ -165,7 +152,7 @@ export async function executeApprovedCards(
           }
         } else {
           afterResult = "failed";
-          error = revoke.error;
+          error = redactErrorMessage(revoke.error);
         }
       } else if (dryRun) {
         afterResult = "partial";
@@ -180,7 +167,7 @@ export async function executeApprovedCards(
       }
     } catch (err) {
       afterResult = "failed";
-      error = err instanceof Error ? err.message : String(err);
+      error = redactErrorMessage(err instanceof Error ? err.message : String(err));
     }
 
     const afterAt = new Date();
@@ -252,10 +239,7 @@ export async function executeApprovedCards(
       });
     } else {
       failed += 1;
-      const classified = classifyProductError(
-        new Error(error ?? "execution failed"),
-        "execution",
-      );
+      const classified = classifyProductError(new Error(error ?? "execution failed"), "execution");
       results.push({
         cardId: card.id,
         status: "failed",

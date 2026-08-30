@@ -128,6 +128,8 @@ describe("API scan → approve → execute → audit (fixture)", () => {
     expect(resetCardData.cards.every((card) => card.decision === null)).toBe(true);
 
     const audit = await app.inject({ method: "GET", url: "/audit" });
-    expect((audit.json() as { records: unknown[] }).records).toHaveLength(0);
+    const auditData = audit.json() as { records: unknown[]; verification: { ok: boolean } };
+    expect(auditData.records.length).toBeGreaterThan(0);
+    expect(auditData.verification.ok).toBe(true);
   }, 60_000);
 });

@@ -5,6 +5,7 @@
 
 export type {
   ClusterKind,
+  AgentDeclaration,
   DirectoryEntry,
   IdentityCluster,
   KeyAttribution,
@@ -14,13 +15,7 @@ export type {
   SignalKind,
   UnknownBucket,
 } from "./types.js";
-export {
-  reconcileIdentities,
-  serializeReconciliationResult,
-} from "./reconcile.js";
-export {
-  USERNAME_SIMILARITY_THRESHOLD,
-  usernameNameSimilarity,
-} from "./similarity.js";
+export { reconcileIdentities, serializeReconciliationResult } from "./reconcile.js";
+export { USERNAME_SIMILARITY_THRESHOLD, usernameNameSimilarity } from "./similarity.js";
 export { runReconciliationFromJson } from "./run.js";
 export { CI_TRAP_MARKER } from "./trap.js";

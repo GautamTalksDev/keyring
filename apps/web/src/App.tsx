@@ -2,6 +2,7 @@ import { AgentActivity } from "./components/AgentActivity.js";
 import { ApprovalQueue } from "./components/ApprovalQueue.js";
 import { ErrorBanner } from "./components/ErrorBanner.js";
 import { GuidedDemoPanel } from "./components/GuidedDemoPanel.js";
+import { GuidedDemoStatusStrip } from "./components/GuidedDemoStatusStrip.js";
 import { useScanSession } from "./hooks/useScanSession.js";
 import { useGuidedDemo } from "./hooks/useGuidedDemo.js";
 import { classifyClientError, recoveryFor, type ProductErrorKind } from "./lib/errors.js";
@@ -106,6 +107,12 @@ export function App() {
           cards={session.cards}
           onContinue={guided.continueGate}
           onStop={guided.stop}
+        />
+      ) : null}
+      {demoMode && guided.state.phase !== "idle" ? (
+        <GuidedDemoStatusStrip
+          state={guided.state}
+          systemCount={Object.keys(session.activity.subagents).length || 6}
         />
       ) : null}
 

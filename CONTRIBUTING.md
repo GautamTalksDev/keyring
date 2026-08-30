@@ -1,37 +1,35 @@
 # Contributing
 
-All work goes through pull requests. Do not push directly to `main`.
+Keyring changes are reviewed through pull requests. Do not push directly to `main`.
 
-## Getting started
+## Start here
 
-1. Install Node 20+ and [pnpm](https://pnpm.io/).
-2. Copy `.env.example` to `.env` and fill in local values (never commit real secrets).
-3. Start infra (includes Keyring Postgres on `:5432`): `cd infra && cp .env.example .env && docker compose up -d`
-4. From the repo root:
+Install Node 20 or newer and pnpm 9 or newer.
 
 ```bash
 pnpm install
-pnpm db:migrate
-pnpm seed:test-org
-pnpm build
-pnpm test
+pnpm demo
 ```
 
-## Development
+The demo needs no credentials. For server work that uses Postgres, copy `.env.example` to `.env`, start the database from `infra`, and run the migrations.
+
+## Before opening a pull request
+
+Run the checks from the repository root:
 
 ```bash
-pnpm dev
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm audit:secrets
 ```
 
-Runs the API server and the web app together.
-
-## Before opening a PR
-
-- `pnpm lint`
-- `pnpm typecheck`
-- `pnpm test`
-- Keep commits focused; prefer small PRs.
+Keep each change focused. Add a regression test when fixing a bug. Update the relevant documentation when behavior or configuration changes. Do not include generated build output or local database files.
 
 ## Secrets
 
-Never commit `.env`, `.env.*` (except `.env.example`), or any `*.credentials.json` files.
+Never commit `.env`, credential files, provider keys, access tokens, or service account JSON. The only env file intended for the repository is `.env.example`, and it must contain placeholders only.
+
+## Pull requests
+
+Describe the user-visible change, the safety impact, and the checks you ran. Call out any live provider behavior that was not tested. Keep commits and review comments factual and specific.

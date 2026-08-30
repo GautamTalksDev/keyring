@@ -8,6 +8,7 @@ import { sortCards } from "../lib/format.js";
 export type GuidedDemoPhase =
   | "idle"
   | "scanning"
+  | "reconciling"
   | "headline"
   | "approving"
   | "waiting"
@@ -20,6 +21,8 @@ export type GuidedDemoPhase =
 
 export interface GuidedDemoState {
   phase: GuidedDemoPhase;
+  step: number;
+  totalSteps: number;
   scanId: string | null;
   targetCardId: string | null;
   message: string | null;
@@ -95,6 +98,8 @@ function isCiProtectedCard(card: ApiCard): boolean {
 function initialState(): GuidedDemoState {
   return {
     phase: "idle",
+    step: 0,
+    totalSteps: 7,
     scanId: null,
     targetCardId: null,
     message: null,
@@ -207,7 +212,8 @@ export function useGuidedDemo({
     setState({
       ...initialState(),
       phase: "scanning",
-      message: "Starting the five-system scan…",
+      step: 1,
+      message: "Starting the guided scan…",
     });
 
     try {
@@ -216,13 +222,31 @@ export function useGuidedDemo({
       if (!scanId) {
         throw new Error(activityRef.current.error ?? "The guided scan could not start.");
       }
-      update({ scanId, message: "Subagents are scanning across five systems…" });
+      update({
+        scanId,
+        step: 2,
+        message: "Subagents are scanning across connected systems…",
+      });
 
-      await waitFor(
-        () =>
-          activityRef.current.scanId === scanId && isTerminalScanStatus(activityRef.current.status),
-        controller.signal,
-      );
+      let reconciliationAnnounced = false;
+      await waitFor(() => {
+        if (
+          !reconciliationAnnounced &&
+          activityRef.current.sandbox.active &&
+          activityRef.current.scanId === scanId &&
+          activityRef.current.status === "running"
+        ) {
+          reconciliationAnnounced = true;
+          update({
+            phase: "reconciling",
+            step: 3,
+            message: "Reconciling identities in the sandbox…",
+          });
+        }
+        return (
+          activityRef.current.scanId === scanId && isTerminalScanStatus(activityRef.current.status)
+        );
+      }, controller.signal);
       if (activityRef.current.status !== "completed") {
         throw new Error(activityRef.current.error ?? "The guided scan did not complete.");
       }
@@ -230,6 +254,7 @@ export function useGuidedDemo({
 
       update({
         phase: "headline",
+        step: 4,
         message: "Scan complete. Hold on the summary so it can be read.",
       });
       await wait(HEADLINE_HOLD_MS, controller.signal);
@@ -272,6 +297,7 @@ export function useGuidedDemo({
         const card = safeCards[index]!;
         update({
           phase: "approving",
+          step: 5,
           targetCardId: card.id,
           message: `Approving safe card ${index + 1} of ${safeCards.length}…`,
         });
@@ -287,6 +313,7 @@ export function useGuidedDemo({
 
       update({
         phase: "waiting",
+        step: 6,
         targetCardId: ciCard.id,
         message: "Human approval gate — the protected CI card is waiting.",
       });
@@ -310,6 +337,7 @@ export function useGuidedDemo({
 
       update({
         phase: "holding",
+        step: 6,
         message: "Recording the human decision: belongs to CI, flag the owner.",
       });
       const held = await decide(ciCard.id, {
@@ -322,6 +350,7 @@ export function useGuidedDemo({
 
       update({
         phase: "executing",
+        step: 7,
         targetCardId: null,
         message: "Executing approved cards and recording each result…",
       });
@@ -347,6 +376,8 @@ export function useGuidedDemo({
           };
           streamResults.push(result);
           update({
+            step: 7,
+            targetCardId: result.cardId,
             results: [...streamResults],
           });
           await wait(EXECUTION_RESULT_HOLD_MS, controller.signal);
@@ -358,15 +389,17 @@ export function useGuidedDemo({
       if (remaining > 0) {
         update({
           phase: "verifying",
+          step: 7,
           message: "Holding the verification view for the recording…",
         });
         await wait(remaining, controller.signal);
       }
 
-      update({ phase: "verifying", message: "Verifying the append-only audit chain…" });
+      update({ phase: "verifying", step: 7, message: "Verifying the append-only audit chain…" });
       const audit = await fetchAudit();
       update({
         phase: "ledger",
+        step: 7,
         message: "Audit ledger · hash verification complete",
         auditRecords: audit.records,
         verification: audit.verification,

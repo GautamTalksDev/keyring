@@ -29,7 +29,9 @@ describe("checked-in recordings", () => {
     }>;
     const ownerByGrant = new Map(
       reconciliation.clusters.flatMap((cluster) =>
-        cluster.grantIds.map((grantId) => [grantId, cluster.personId] as const),
+        cluster.grantIds.map(
+          (grantId) => [grantId, cluster.personId ?? cluster.principalId] as const,
+        ),
       ),
     );
     for (const card of cards) {
