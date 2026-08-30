@@ -96,6 +96,22 @@ More detail is available in [`docs/HARNESS.md`](docs/HARNESS.md), [`docs/API.md`
 
 The default demo is replay based. It verifies the UI, API, decision path, dry run execution, streamed results, and ledger hash verification without making provider calls. The TrueForge driver has been exercised against the local harness and the Keyring MCP endpoints, including the five system fan out, reconciliation, and card persistence. Live GitHub and Google Workspace provider operations remain opt in and require credentials, a configured MCP server, and a throwaway test organization. The repository does not claim that every live provider response or live mutation path has been verified.
 
+## Qodo Code Review Evidence
+
+Qodo was installed before the first feature commit and reviewed all nine pull requests. Nothing merged to `main` without a review.
+
+**Representative merged PR:** [#2, audit chain fork regression](https://github.com/GautamTalksDev/keyring/pull/2)
+
+Qodo found that a regression test permanently altered the `recorded_at` column default and never restored it, leaking a fixed timestamp into every subsequent test on the shared Postgres backend. We wrapped the mutation in `try/finally` so restoration happens even when an assertion fails. The PR history records the completed review, our decision to fix the isolation leak rather than add a retry, and Qodo's follow up review against the final code before merge.
+
+The deepest fix Qodo prompted was in the audit ledger. A test failed once and passed on retry, but the underlying issue was that two records written in the same millisecond could claim the same parent and fork the hash chain. That meant the tamper-evident ledger was not tamper-evident under concurrent writes. We fixed it with a monotonic sequence column, a unique constraint on the parent hash, and an advisory lock.
+
+Other merged PRs with substantive Qodo findings, all fixed before merge:
+
+- [#8, demo and security hardening](https://github.com/GautamTalksDev/keyring/pull/8) fixed five bugs, including a demo card limit applied to production scan paths that silently dropped grants from real audits, and a secret scanner that reported success without scanning anything.
+- [#7, guided demo safeguards](https://github.com/GautamTalksDev/keyring/pull/7) fixed four bugs, including guided demo decisions committing server-side after a stop.
+- [#9, queue legibility](https://github.com/GautamTalksDev/keyring/pull/9) fixed the UI labelling declared agents as unregistered because it inferred registration from missing attribution instead of reading the authoritative declaration status.
+
 ## AI assistance disclosure
 
 This project was developed with assistance from Cursor, an AI coding agent. Humans directed the product decisions, safety defaults, tests, review, and final verification. Cursor assisted with implementation, refactoring, testing, and documentation drafting, as permitted by the hackathon rules.
