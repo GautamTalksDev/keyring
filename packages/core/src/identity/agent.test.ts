@@ -74,7 +74,7 @@ describe("AI agent identity governance", () => {
         agentName: "Rogue Agent",
         runtime: "external",
         reachableTools: ["deploy-mcp"],
-        declarationStatus: "unregistered",
+        declarationStatus: "declared",
       },
     });
     const result = reconcileIdentities({
@@ -89,6 +89,40 @@ describe("AI agent identity governance", () => {
     });
     expect(risk.score).toBe(100);
     expect(risk.reasons).toContain("AI agent is unregistered and holds live access (+45)");
+  });
+
+  it("matches padded declared agent identifiers after normalization", () => {
+    const grant = agentGrant({
+      principal: {
+        kind: "ai_agent",
+        identifiers: [
+          { kind: "agent_id", value: "declared-agent", source: "trueforge" },
+          { kind: "key_id", value: "agent-key", source: "trueforge" },
+        ],
+        agentName: "Declared Agent",
+        runtime: "TrueForge",
+        reachableTools: ["keyring-mcp"],
+        declarationStatus: "declared",
+      },
+    });
+    const result = reconcileIdentities({
+      grants: [grant],
+      declaredAgents: [
+        {
+          id: "  declared-agent  ",
+          name: "Declared Agent",
+          runtime: "TrueForge",
+          owner: "owner@keyring-test.example",
+          purpose: "Test purpose",
+          agentIds: ["  declared-agent  "],
+          keyIds: ["  agent-key  "],
+        },
+      ],
+    });
+
+    expect(result.clusters).toHaveLength(1);
+    expect(result.clusters[0]?.kind).toBe("ai_agent");
+    expect(result.unknown.grantIds).toHaveLength(0);
   });
 
   it("does not attach an agent grant to a service-account cluster by shared key", () => {

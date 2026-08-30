@@ -31,7 +31,6 @@ export function buildApprovalCards(input: BuildApprovalCardsInput): ApprovalCard
     {
       kind: Grant["principal"]["kind"];
       confidence: "certain" | "probable" | "speculative";
-      agentStatus?: "declared" | "unregistered";
     }
   >();
   for (const cluster of reconciliation.clusters) {
@@ -44,7 +43,6 @@ export function buildApprovalCards(input: BuildApprovalCardsInput): ApprovalCard
       riskAttributionByGrant.set(gid, {
         kind: cluster.kind,
         confidence: cluster.confidence,
-        ...(cluster.kind === "ai_agent" ? { agentStatus: "declared" as const } : {}),
       });
     }
   }

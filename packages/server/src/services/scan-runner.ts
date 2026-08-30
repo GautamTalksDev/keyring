@@ -543,7 +543,9 @@ async function runFixtureFanOutAndPersist(
   if (wantDiff && diffOnly && diff.baselineScanId) {
     cards = filterCardsToDiff(cards, diff);
   }
-  cards = limitDemoCards(cards);
+  if (process.env.KEYRING_DEMO === "1") {
+    cards = limitDemoCards(cards);
+  }
   const identityCounts = countIdentityKinds(grants);
 
   publish(

@@ -2,7 +2,7 @@ import { asPersonId, asPrincipalId, type GrantId } from "../brand.js";
 import type { Confidence } from "../evidence.js";
 import type { Grant } from "../grant.js";
 import { sha256Hex } from "../hash.js";
-import type { Identifier } from "../identifier.js";
+import { normalizeIdentifier, type Identifier } from "../identifier.js";
 import { normalizeEmailValue } from "../person.js";
 import { USERNAME_SIMILARITY_THRESHOLD, usernameNameSimilarity } from "./similarity.js";
 import type {
@@ -150,18 +150,22 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
 
   // --- Seed declared AI agents (keyring.yml) ---
   for (const agent of input.declaredAgents ?? []) {
-    const key = `agent:${agent.id}`;
-    const identifiers: Identifier[] = (agent.agentIds ?? [agent.id]).map((value) => ({
-      kind: "agent_id",
-      value,
-      source: "keyring.yml",
-    }));
-    identifiers.push(
-      ...(agent.keyIds ?? []).map((value) => ({
-        kind: "key_id" as const,
+    const key = `agent:${agent.id.trim()}`;
+    const identifiers: Identifier[] = (agent.agentIds ?? [agent.id]).map((value) =>
+      normalizeIdentifier({
+        kind: "agent_id",
         value,
         source: "keyring.yml",
-      })),
+      }),
+    );
+    identifiers.push(
+      ...(agent.keyIds ?? []).map((value) =>
+        normalizeIdentifier({
+          kind: "key_id",
+          value,
+          source: "keyring.yml",
+        }),
+      ),
     );
     seeds.push({
       key,
@@ -200,7 +204,7 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
       if (id.kind === "username") {
         usernameToSeed.set(id.value.toLowerCase(), seed.key);
       }
-      if (id.kind === "agent_id") agentIdToSeed.set(id.value, seed.key);
+      if (id.kind === "agent_id") agentIdToSeed.set(id.value.trim(), seed.key);
     }
   }
 
@@ -343,13 +347,13 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
   // --- Signal 5: key/token attribution ---
   const attributionIndex = new Map<string, KeyAttribution>();
   for (const ka of keyAttributions) {
-    attributionIndex.set(ka.keyId, ka);
+    attributionIndex.set(ka.keyId.trim(), ka);
   }
   // Also parse evidence claims for simple "attributed to X" patterns in raw
   for (const g of grants) {
     for (const id of collectIdentifiers(g)) {
       if (id.kind !== "key_id") continue;
-      const attr = attributionIndex.get(id.value);
+      const attr = attributionIndex.get(id.value.trim());
       if (!attr) continue;
       const target = resolveAttributionTarget(
         attr.attributedTo,
@@ -373,7 +377,7 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
     if (g.principal.kind !== "ai_agent") continue;
     for (const id of collectIdentifiers(g)) {
       if (id.kind !== "agent_id") continue;
-      const seedKey = agentIdToSeed.get(id.value);
+      const seedKey = agentIdToSeed.get(id.value.trim());
       if (!seedKey) continue;
       link(
         grantNode(g.id),
@@ -385,11 +389,13 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
     }
   }
   for (const agent of input.declaredAgents ?? []) {
-    const seedKey = `agent:${agent.id}`;
+    const seedKey = `agent:${agent.id.trim()}`;
     for (const g of grants) {
       if (g.principal.kind !== "ai_agent") continue;
       const keyHit = (agent.keyIds ?? []).some((keyId) =>
-        g.principal.identifiers.some((id) => id.kind === "key_id" && id.value === keyId),
+        g.principal.identifiers.some(
+          (id) => id.kind === "key_id" && id.value.trim() === keyId.trim(),
+        ),
       );
       if (!keyHit) continue;
       link(
@@ -397,7 +403,7 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
         seedNode(seedKey),
         "agent_declaration",
         "certain",
-        `Credential ${agent.keyIds?.find((keyId) => g.principal.identifiers.some((id) => id.kind === "key_id" && id.value === keyId))} belongs to declared agent ${agent.name}`,
+        `Credential ${agent.keyIds?.find((keyId) => g.principal.identifiers.some((id) => id.kind === "key_id" && id.value.trim() === keyId.trim()))} belongs to declared agent ${agent.name}`,
       );
     }
   }
@@ -409,7 +415,7 @@ export function reconcileIdentities(input: ReconciliationInput): ReconciliationR
       const keyHit =
         g.principal.kind !== "ai_agent" &&
         (sa.keyIds ?? []).some((kid) =>
-          g.principal.identifiers.some((i) => i.kind === "key_id" && i.value === kid),
+          g.principal.identifiers.some((i) => i.kind === "key_id" && i.value.trim() === kid.trim()),
         );
       // A shared resource can have both a human collaborator and a service
       // account deploy key. Resource ownership alone must not override an

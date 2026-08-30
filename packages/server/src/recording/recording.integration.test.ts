@@ -17,8 +17,10 @@ describe("record → replay (offline)", () => {
   let close: () => Promise<void>;
   let app: ReturnType<typeof createApp>;
   const recordingId = `test-ada`;
+  const previousDemo = process.env.KEYRING_DEMO;
 
   beforeAll(async () => {
+    process.env.KEYRING_DEMO = "1";
     const handle = await openTestDatabase("recording");
     db = handle.db;
     close = handle.close;
@@ -28,6 +30,8 @@ describe("record → replay (offline)", () => {
   afterAll(async () => {
     await app.close();
     await close();
+    if (previousDemo === undefined) delete process.env.KEYRING_DEMO;
+    else process.env.KEYRING_DEMO = previousDemo;
   });
 
   it("records a scan and replays with matching costs and cards", async () => {

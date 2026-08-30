@@ -22,7 +22,7 @@ describe("fixture scan fan-out", () => {
     expect(result.grants.length).toBeGreaterThan(0);
     expect(result.reconciliation.clusters.length).toBe(6); // 3 people + CI service account + 2 declared agents
     expect(result.reconciliation.unknown.grantIds.length).toBeGreaterThanOrEqual(1);
-    expect(result.cards.length).toBeLessThanOrEqual(9);
+    expect(result.cards.length).toBe(result.grants.length);
     expect(result.cards.some((c) => c.grant.principal.kind === "ai_agent")).toBe(true);
     expect(result.cards.filter((c) => c.grant.principal.kind === "ai_agent")).toHaveLength(3);
     expect(result.cards.some((c) => c.status === "held")).toBe(true);

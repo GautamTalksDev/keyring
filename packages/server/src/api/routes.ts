@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ZodError } from "zod";
 import { redactErrorMessage, redactSecrets } from "@keyring/core";
-import { randomBytes } from "node:crypto";
 
 import type { Database } from "../db/client.js";
 import {
@@ -30,8 +29,6 @@ import { executeApprovedCards } from "../services/execute.js";
 import { getScanCosts, startScan } from "../services/scan-runner.js";
 import type { ApprovalStatus, Decision } from "@keyring/core";
 import { listRecordings } from "../recording/store.js";
-
-const exportSecret = process.env.KEYRING_EXPORT_SECRET?.trim() || randomBytes(32).toString("hex");
 
 function zodError(reply: FastifyReply, err: ZodError) {
   return reply.code(400).send({
@@ -380,6 +377,14 @@ export function registerApiRoutes(app: FastifyInstance, opts: { db: Database["db
     } catch (err) {
       if (err instanceof ZodError) return zodError(reply, err);
       throw err;
+    }
+
+    const exportSecret = process.env.KEYRING_EXPORT_SECRET?.trim();
+    if (!exportSecret) {
+      return reply.code(503).send({
+        error: "export_signing_unavailable",
+        message: "Audit export signing requires KEYRING_EXPORT_SECRET to be configured.",
+      });
     }
 
     const chain = await listAuditChain(db, { cardId: query.cardId });

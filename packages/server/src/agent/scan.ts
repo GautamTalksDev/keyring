@@ -297,8 +297,6 @@ export async function runFixtureScanPipeline(
       return ids.includes(hint) || name.includes(hint) || c.grant.principal.kind === "ai_agent";
     });
   }
-  cards = limitDemoCards(cards, 9);
-
   return { grants, reconciliation, cards, systems };
 }
 

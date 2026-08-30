@@ -11,7 +11,6 @@ import { z } from "zod";
 import { persistScanOutcome } from "../agent/persist.js";
 import {
   inventorySystem,
-  limitDemoCards,
   listConnectedSystems,
   loadAllFixtureGrants,
   runIdentityReconciliation,
@@ -194,7 +193,6 @@ export async function handleScanTool(
               c.grant.principal.kind === "ai_agent",
           );
         }
-        cards = limitDemoCards(cards);
         return textResult({
           grantCount,
           clusterCount: reconciliation.clusters.length,
@@ -227,7 +225,6 @@ export async function handleScanTool(
               c.grant.principal.kind === "ai_agent",
           );
         }
-        cards = limitDemoCards(cards);
         const persisted = await persistScanOutcome(ctx.db, {
           grants,
           cards,

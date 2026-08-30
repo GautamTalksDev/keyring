@@ -84,6 +84,14 @@ Responses and logs can still contain ordinary access metadata, such as email
 addresses, usernames, resource names, and evidence claims. Treat those as
 organization data. Redaction protects credentials; it is not anonymization.
 
+## Export signing
+
+Audit exports are signed with `KEYRING_EXPORT_SECRET`. Keyring fails closed
+with an explicit error when this setting is missing; it never creates a
+temporary or random signing key. Configure and protect a stable secret before
+using `/audit/export`, otherwise the export cannot be verified across server
+restarts.
+
 ## Before connecting a real organization
 
 1. Run the service on a private interface or behind authenticated ingress.
