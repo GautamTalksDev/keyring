@@ -91,6 +91,7 @@ describe("format helpers", () => {
       systems: 3,
       humanIdentities: 2,
       agentIdentities: 0,
+      unregisteredAgents: 0,
       unattributed: 1,
       overYearIdle: 1,
       irreversible: 1,
@@ -135,6 +136,32 @@ describe("format helpers", () => {
     const counts = countScanSummary([card({ id: "human" }), agent], ["github", "agent_identity"]);
     expect(counts.humanIdentities).toBe(1);
     expect(counts.agentIdentities).toBe(1);
+    expect(counts.unregisteredAgents).toBe(0);
     expect(scanSummaryText(counts)).toContain("1 human identity and 1 AI agent identity");
+  });
+
+  it("counts unmatched AI agents as unregistered", () => {
+    const rogue = card({
+      id: "rogue",
+      attribution: {
+        confidence: "certain",
+        reasoning: "Agent discovered without a policy match.",
+      },
+      grant: {
+        ...card({ id: "rogue-base" }).grant,
+        principal: {
+          kind: "ai_agent",
+          agentName: "Unregistered Deployment Agent",
+          declarationStatus: "declared",
+          identifiers: [{ kind: "agent_id", value: "rogue", source: "fixture" }],
+        },
+      },
+    });
+
+    const counts = countScanSummary([rogue], ["agent_identity"]);
+
+    expect(counts.agentIdentities).toBe(1);
+    expect(counts.unregisteredAgents).toBe(1);
+    expect(scanSummaryText(counts)).toContain("1 unregistered agent.");
   });
 });
